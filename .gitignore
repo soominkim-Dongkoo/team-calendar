@@ -1,0 +1,17 @@
+# 환경변수 / 크레덴셜
+scraper/.env
+.env
+
+# Python 캐시
+__pycache__/
+*.pyc
+*.pyo
+
+# 로컬 데이터 캐시
+scraper/leave_data.json
+
+# 탐색 중 생성된 스크린샷
+*.png
+
+# 테스트 파일
+scraper/test_login.py
