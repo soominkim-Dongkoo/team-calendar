@@ -773,7 +773,7 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 9px 12px;
-      font-size: 14px;
+      font-size: 16px; /* 16px 미만이면 iOS Safari가 포커스 시 자동 줌 */
       font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
       font-weight: 600;
       color: var(--text-secondary);
@@ -1243,8 +1243,10 @@
       <div class="days-grid" id="days-grid"></div>
     </div>
 
+    <!-- 모바일 공용 범례 (그리드/일정 뷰 공통) -->
+    <div id="mobile-cal-legend" class="mobile-legend-row" style="display:none;"></div>
+
     <div id="mobile-day-section" style="display:none; padding-bottom:24px;">
-      <div id="mobile-legend-row" class="mobile-legend-row"></div>
       <div class="mobile-date-nav">
         <button id="mobile-date-btn" class="mobile-date-btn" onclick="toggleMobileDateDropdown()">
           <span id="mobile-date-label">오늘</span>
@@ -1762,6 +1764,8 @@
     document.body.classList.toggle('simulate-mobile', _forceMobile);
     document.getElementById('btn-simulate-mobile').textContent = _forceMobile ? '🖥 데스크톱' : '📱 모바일';
     document.getElementById('btn-view-mode').textContent = '⊞ 그리드';
+    const legend = document.getElementById('mobile-cal-legend');
+    if (legend) legend.style.display = _forceMobile ? '' : 'none';
     loadAndRender(curYear, curMonth);
     if (!_forceMobile) openDayView(_selectedDayStr || `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`);
   }
@@ -1790,13 +1794,17 @@
 
     _cachedData = [...leaves, ...events];
     renderGrid(year, month, _cachedData);
+    const calLegend = document.getElementById('mobile-cal-legend');
     if (isMobile() && !_mobileGrid) {
       document.getElementById('month-grid').style.display = 'none';
       document.getElementById('mobile-day-section').style.display = '';
+      if (calLegend) calLegend.style.display = '';
     } else {
       document.getElementById('month-grid').style.display = '';
       document.getElementById('mobile-day-section').style.display = 'none';
+      if (calLegend) calLegend.style.display = isMobile() ? '' : 'none';
     }
+    updateMobileLegend();
     updateMobileDatePicker(year, month);
     renderMiniCal(year, month);
     // 기본값: 오늘 day view
@@ -1828,7 +1836,7 @@
   }
 
   function updateMobileLegend() {
-    const row = document.getElementById('mobile-legend-row');
+    const row = document.getElementById('mobile-cal-legend');
     if (!row) return;
     const src = currentView === 'team'
       ? document.getElementById('legend-team')
@@ -2376,17 +2384,20 @@
   // ── 모바일 아젠다 뷰 ──────────────────────────────────
   function toggleMobileView() {
     _mobileGrid = !_mobileGrid;
-    const btn  = document.getElementById('btn-view-mode');
-    const grid = document.getElementById('month-grid');
-    const mds  = document.getElementById('mobile-day-section');
+    const btn    = document.getElementById('btn-view-mode');
+    const grid   = document.getElementById('month-grid');
+    const mds    = document.getElementById('mobile-day-section');
+    const legend = document.getElementById('mobile-cal-legend');
     if (_mobileGrid) {
       btn.textContent = '☰ 목록';
       grid.style.display = '';
       mds.style.display = 'none';
+      if (legend) { legend.style.display = ''; updateMobileLegend(); }
     } else {
       btn.textContent = '⊞ 그리드';
       grid.style.display = 'none';
       mds.style.display = '';
+      if (legend) { legend.style.display = ''; updateMobileLegend(); }
       openDayView(_selectedDayStr || `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`);
     }
   }
