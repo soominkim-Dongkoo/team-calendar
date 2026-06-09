@@ -10,8 +10,9 @@ __pycache__/
 # 로컬 데이터 캐시
 scraper/leave_data.json
 
-# 탐색 중 생성된 스크린샷
+# 탐색 중 생성된 스크린샷 (아이콘 파일 제외)
 *.png
+!icon-*.png
 
 # 테스트 파일
 scraper/test_login.py
