@@ -1151,6 +1151,29 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- 예약현황 사이드 패널 -->
+<div id="avail-panel" style="
+  display:none;
+  position:fixed;
+  top:50%;
+  transform:translateY(-50%);
+  width:260px;
+  max-height:80vh;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.2);
+  z-index:1100;
+  overflow:hidden;
+  flex-direction:column;
+">
+  <div style="padding:16px 16px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-light);">
+    <span id="avail-title" style="font-size:13px;font-weight:600;color:var(--text-primary);"></span>
+    <button onclick="closeAvailPanel()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;line-height:1;">×</button>
+  </div>
+  <div id="avail-body" style="padding:12px 16px;overflow-y:auto;flex:1;font-size:12px;"></div>
+</div>
+
 <!-- 삭제 확인 팝업 -->
 <div class="confirm-overlay" id="confirm-overlay">
   <div class="confirm-box">
@@ -1191,19 +1214,22 @@
 
     <div class="form-group" id="ev-room-group" style="display:none;">
       <label>회의실</label>
-      <select id="ev-room">
-        <option value="">선택 안함</option>
-        <option value="본사_대회의실">본사_대회의실</option>
-        <option value="본사_중회의실">본사_중회의실</option>
-        <option value="본사_1408호 중회의실">본사_1408호 중회의실</option>
-        <option value="본사_1407호 중회의실">본사_1407호 중회의실</option>
-      </select>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="ev-room" style="flex:1;" onchange="if(document.getElementById('avail-panel').style.display!=='none')openAvailPanel()">
+          <option value="">선택 안함</option>
+          <option value="본사_대회의실">본사_대회의실</option>
+          <option value="본사_중회의실">본사_중회의실</option>
+          <option value="본사_1408호 중회의실">본사_1408호 중회의실</option>
+          <option value="본사_1407호 중회의실">본사_1407호 중회의실</option>
+        </select>
+        <button type="button" id="btn-avail" onclick="openAvailPanel()" style="white-space:nowrap;padding:6px 10px;font-size:12px;border-radius:7px;border:1px solid var(--border);background:var(--surface-hover);color:var(--text-secondary);cursor:pointer;">예약현황</button>
+      </div>
     </div>
 
     <div class="form-row">
       <div class="form-group">
         <label>시작일</label>
-        <input type="date" id="ev-start" onchange="onStartDateChange()" />
+        <input type="date" id="ev-start" onchange="onStartDateChange();if(document.getElementById('avail-panel').style.display!=='none')openAvailPanel()" />
       </div>
       <div class="form-group">
         <label>종료일</label>
@@ -1293,7 +1319,7 @@
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   // 로컬 개발: localhost:8765 / Vercel 배포: /api (same-origin)
-  const RESERVE_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  const RESERVE_BASE = (location.hostname === '' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')
     ? 'http://localhost:8765'
     : '';
 
@@ -1937,9 +1963,10 @@
 
   function deleteEvent() {
     if (!_detailRecord || _detailRecord._source !== 'event') return;
-    const title = _detailRecord.title;
+    const title  = _detailRecord.title;
+    const id     = _detailRecord.id;
+    const resvId = _detailRecord.daou_reservation_id;
     showConfirm(`"${title}" 일정을 삭제할까요?`, '삭제', async () => {
-      const resvId = _detailRecord.daou_reservation_id;
       if (resvId) {
         try {
           await fetch(`${RESERVE_BASE}/api/reserve`, {
@@ -1951,7 +1978,8 @@
           console.warn('[다우오피스] 예약 삭제 실패:', ex.message);
         }
       }
-      await sb.from('manual_events').delete().eq('id', _detailRecord.id);
+      const { error } = await sb.from('manual_events').delete().eq('id', id);
+      if (error) { showToast('삭제 실패: ' + error.message, 'error'); return; }
       closeDetail();
       loadAndRender(curYear, curMonth);
     });
@@ -1968,6 +1996,70 @@
     document.getElementById('confirm-overlay').classList.remove('open');
     _confirmCallback = null;
   }
+
+  // ── 예약현황 사이드 패널 ──────────────────────────────
+  function _positionAvailPanel() {
+    const modal = document.querySelector('.modal');
+    const btn   = document.getElementById('btn-avail');
+    const panel = document.getElementById('avail-panel');
+    if (!modal || !btn) return;
+    const mRect = modal.getBoundingClientRect();
+    const bRect = btn.getBoundingClientRect();
+    const panelW = 260;
+    const rightEdge = mRect.right + 12;
+    panel.style.left = (rightEdge + panelW > window.innerWidth - 8)
+      ? Math.max(8, mRect.left - panelW - 12) + 'px'
+      : rightEdge + 'px';
+    // 버튼 상단 기준, 화면 아래를 벗어나지 않도록 클램프
+    const maxTop = window.innerHeight - panel.offsetHeight - 8;
+    panel.style.top = Math.min(bRect.top, maxTop) + 'px';
+    panel.style.transform = 'none';
+  }
+
+  async function openAvailPanel() {
+    const date = document.getElementById('ev-start').value;
+    const room = document.getElementById('ev-room').value;
+    if (!date) { showToast('시작일을 먼저 선택해주세요.'); return; }
+    if (!room) { showToast('회의실을 먼저 선택해주세요.'); return; }
+
+    const panel = document.getElementById('avail-panel');
+    const body  = document.getElementById('avail-body');
+    document.getElementById('avail-title').textContent = `${room.replace('본사_', '')} · ${date}`;
+    body.innerHTML = '<div style="color:var(--text-muted);padding:8px 0;">조회 중...</div>';
+    panel.style.display = 'flex';
+    _positionAvailPanel();
+
+    try {
+      const url = `${RESERVE_BASE}/api/availability?date=${date}&room=${encodeURIComponent(room)}`;
+      const res = await fetch(url);
+      const json = await res.json();
+      const list = json.data || [];
+
+      if (!list.length) {
+        body.innerHTML = '<div style="color:var(--text-muted);padding:8px 0;">예약 없음</div>';
+        return;
+      }
+
+      body.innerHTML = list.map(item => `
+        <div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--border-light);align-items:flex-start;">
+          <div style="min-width:80px;color:var(--text-secondary);font-size:11px;padding-top:1px;">
+            ${item.start} ~ ${item.end}
+          </div>
+          <div>
+            <div style="font-weight:600;color:var(--text-primary);">${item.name}</div>
+            ${item.title ? `<div style="color:var(--text-muted);font-size:11px;margin-top:1px;">${item.title}</div>` : ''}
+          </div>
+        </div>
+      `).join('');
+    } catch (e) {
+      body.innerHTML = '<div style="color:#e53e3e;">조회 실패 (서버 확인)</div>';
+    }
+  }
+
+  function closeAvailPanel() {
+    document.getElementById('avail-panel').style.display = 'none';
+  }
+  // ──────────────────────────────────────────────────────
 
   let _toastTimer = null;
   function showToast(msg, type = '') {
@@ -2073,6 +2165,7 @@
     const anchor = _detailAnchor;
     _editingId = null;
     document.getElementById('modal').classList.remove('open');
+    closeAvailPanel();
     if (!saved && wasEditing && record && anchor) {
       setTimeout(() => openDetail(record, anchor), 0);
     }
@@ -2159,6 +2252,9 @@
   }
 
   async function saveEvent() {
+    const saveBtn = document.querySelector('.btn-save');
+    const setBusy = (on) => { saveBtn.disabled = on; saveBtn.textContent = on ? '예약 중...' : '저장'; };
+
     const title = document.getElementById('ev-title').value.trim();
     const type  = document.getElementById('ev-type').value;
     const start = document.getElementById('ev-start').value;
@@ -2184,6 +2280,7 @@
     if (room && st && et) {
       const prevResvId = _editingId ? (_detailRecord?.daou_reservation_id ?? null) : null;
       const method = prevResvId ? 'PUT' : 'POST';
+      setBusy(true);
       try {
         const resp = await fetch(`${RESERVE_BASE}/api/reserve`, {
           method,
@@ -2197,11 +2294,13 @@
         });
         const result = await resp.json().catch(() => ({}));
         if (!resp.ok) {
+          setBusy(false);
           errEl.textContent = result.error || '그룹웨어 회의실 예약 실패';
           return;
         }
         daouResvId = result.reservation_id ?? null;
       } catch (ex) {
+        setBusy(false);
         errEl.textContent = '그룹웨어 예약 서버에 연결할 수 없습니다 (server.py 실행 필요)';
         return;
       }
@@ -2224,8 +2323,9 @@
       ({ error } = await sb.from('manual_events').insert({ ...payload, owner: currentUser.user_id }));
     }
 
-    if (error) { errEl.textContent = `오류: ${error.message}`; return; }
+    if (error) { setBusy(false); errEl.textContent = `오류: ${error.message}`; return; }
 
+    setBusy(false);
     closeModal(true);
     loadAndRender(curYear, curMonth);
   }
