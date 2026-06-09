@@ -39,7 +39,7 @@ def save_cancel_record(doc_id, target_doc_id):
 
 def extract_target_doc_id(text):
     """상세내용 텍스트에서 휴가 문서번호 패턴 추출 (예: 계원-202606-00017)"""
-    m = re.search(r'[가-힣]+-\d{6}-\d+', text)
+    m = re.search(r'계원-\d{6}-\d+', text)
     return m.group(0) if m else None
 
 
