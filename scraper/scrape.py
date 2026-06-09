@@ -305,24 +305,9 @@ def scrape():
             return links
 
         def redo_cancel_search():
-            page.goto(FOLDER_BASE_URL)
+            page.goto(APPROVAL_URL)
             page.wait_for_load_state("domcontentloaded")
-            page.wait_for_timeout(2000)
-            try:
-                page.select_option("select[name='duration'], #duration", "all")
-            except Exception:
-                pass
-            try:
-                page.select_option("#searchtype", "formName")
-            except Exception:
-                page.select_option("select[name='searchtype']", "formName")
-            page.fill("#keyword, input[name='keyword']", "ERP Data 변경 요청서")
-            try:
-                page.click("button:has-text('검색')")
-            except Exception:
-                page.press("#keyword, input[name='keyword']", "Enter")
-            page.wait_for_load_state("domcontentloaded")
-            page.wait_for_timeout(2000)
+            page.wait_for_timeout(3000)
 
         redo_cancel_search()
 
@@ -371,7 +356,7 @@ def scrape():
                 supabase.table("leave_records").delete().eq("doc_id", target_doc_id).execute()
                 print(f"  취소 처리: {doc_id} → 삭제 대상 {target_doc_id}")
             else:
-                print(f"  취소 문서 {doc_id}: 문서번호 미발견")
+                print(f"  취소 문서 {doc_id}: 문서번호 미발견 | 상세내용: [{detail_text[:200]}]")
 
             save_cancel_record(doc_id, target_doc_id or "")
             processed_cancel_ids.add(doc_id)
