@@ -1025,7 +1025,11 @@
       sidebar { display:none !important; }
       .btn-view-mode { display:inline-flex; align-items:center; gap:4px; }
       .calendar-area { padding: 12px 12px 0; }
+      .btn-simulate-mobile { display:none !important; }
     }
+    body.simulate-mobile sidebar { display:none !important; }
+    body.simulate-mobile .btn-view-mode { display:inline-flex !important; align-items:center; gap:4px; }
+    body.simulate-mobile .calendar-area { padding: 12px 12px 0; }
 
     .daou-overlay {
       display: none;
@@ -1051,6 +1055,7 @@
     </div>
   </div>
   <div class="header-right">
+    <button class="btn-dark btn-simulate-mobile" id="btn-simulate-mobile" onclick="toggleSimulateMobile()" title="모바일 레이아웃 미리보기">📱 모바일</button>
     <button class="btn-dark" id="darkToggle" onclick="toggleDark()" title="다크모드 전환">🌙</button>
     <button class="btn-add" onclick="openModal()">+ 일정 추가</button>
     <div class="avatar-wrap">
@@ -1652,7 +1657,18 @@
 
   let _cachedData = [];
   let _mobileGrid = false;
-  function isMobile() { return window.innerWidth <= 768; }
+  let _forceMobile = false;
+  function isMobile() { return _forceMobile || window.innerWidth <= 768; }
+
+  function toggleSimulateMobile() {
+    _forceMobile = !_forceMobile;
+    _mobileGrid = false;
+    document.body.classList.toggle('simulate-mobile', _forceMobile);
+    document.getElementById('btn-simulate-mobile').textContent = _forceMobile ? '🖥 데스크톱' : '📱 모바일';
+    document.getElementById('btn-view-mode').textContent = '⊞ 그리드';
+    loadAndRender(curYear, curMonth);
+    if (!_forceMobile) openDayView(_selectedDayStr || `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`);
+  }
 
   function getActiveTypes() {
     const state = loadState();
