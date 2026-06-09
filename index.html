@@ -1689,6 +1689,8 @@
 
   function logout() {
     localStorage.removeItem('calUser');
+    localStorage.removeItem('daouSession');
+    _daouSession = null;
     currentUser = null;
     document.getElementById('avatar-menu').classList.remove('open');
     document.getElementById('login-id').value = '';
