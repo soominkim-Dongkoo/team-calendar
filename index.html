@@ -1002,7 +1002,7 @@
 <!-- 헤더 -->
 <header>
   <div class="header-left">
-    <div class="logo"><img src="dongkoo-logo_2.svg" alt="동국제약" style="height:28px; vertical-align:middle; margin-right:8px;">경영기획팀 Calendar</div>
+    <div class="logo"><img src="dongkoo-logo_2.svg" alt="동국바이오제약" style="height:28px; vertical-align:middle; margin-right:8px;">경영기획팀 Calendar</div>
     <div class="view-toggle">
       <button class="active" onclick="setView('team', this)">Team</button>
       <button onclick="setView('personal', this)">My</button>
@@ -1117,7 +1117,7 @@
 <div class="login-overlay" id="login-overlay">
   <div class="login-box">
     <div class="login-logo">
-      <img src="dongkoo-logo_2.svg" alt="동국제약">
+      <img src="dongkoo-logo_2.svg" alt="동국바이오제약">
       <p>경영기획팀 Calendar</p>
     </div>
     <div class="form-group">
@@ -2289,6 +2289,7 @@
             room, title,
             start: `${start}T${st}:00`,
             end: `${end}T${et}:00`,
+            userId: currentUser?.user_id,
             ...(prevResvId ? { reservation_id: prevResvId } : {}),
           }),
         });

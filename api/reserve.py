@@ -53,7 +53,7 @@ def _to_kst(s: str) -> str:
     return s[:19] + '.000+09:00'
 
 
-def _create(sess: requests.Session, room: str, title: str, start: str, end: str) -> int:
+def _create(sess: requests.Session, room: str, title: str, start: str, end: str, user_id: str = None) -> int:
     info = ROOM_MAP.get(room)
     if not info:
         raise ValueError(f'알 수 없는 회의실: {room}')
@@ -64,7 +64,7 @@ def _create(sess: requests.Session, room: str, title: str, start: str, end: str)
         'startTime':  _to_kst(start),
         'endTime':    _to_kst(end),
         'useAnonym':  False,
-        'user':       {'id': os.environ.get('DAOU_USER_ID', '645')},
+        'user':       {'id': user_id or os.environ.get('DAOU_USER_ID', '645')},
         'properties': [{'attributeId': '33', 'content': title}],
         'allday':     False,
     }
@@ -115,9 +115,10 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         req = self._body()
+        user_id = req.get('userId') or os.environ.get('DAOU_USER_ID', '645')
         try:
             sess = _login()
-            rid = _create(sess, req['room'], req['title'], req['start'], req['end'])
+            rid = _create(sess, req['room'], req['title'], req['start'], req['end'], user_id)
             self._ok({'ok': True, 'reservation_id': rid})
         except (ValueError, RuntimeError) as e:
             self._err(502, str(e))
@@ -127,11 +128,12 @@ class handler(BaseHTTPRequestHandler):
     def do_PUT(self):
         req = self._body()
         old_id = req.get('reservation_id')
+        user_id = req.get('userId') or os.environ.get('DAOU_USER_ID', '645')
         try:
             sess = _login()
             if old_id:
                 _delete(sess, int(old_id))
-            new_id = _create(sess, req['room'], req['title'], req['start'], req['end'])
+            new_id = _create(sess, req['room'], req['title'], req['start'], req['end'], user_id)
             self._ok({'ok': True, 'reservation_id': new_id})
         except (ValueError, RuntimeError) as e:
             self._err(502, str(e))
