@@ -1028,6 +1028,11 @@
       .btn-view-mode { display:inline-flex; align-items:center; gap:4px; }
       .calendar-area { padding: 12px 12px 0; }
       .btn-simulate-mobile { display:none !important; }
+      header { padding: 0 12px; }
+      .logo { font-size:14px; }
+      .logo img { height: 22px; margin-right: 4px; }
+      #darkToggle { display:none !important; }
+      .legend { display:none !important; }
     }
     body.simulate-mobile { background:#4a5568; justify-content:flex-start; align-items:center; }
     body.simulate-mobile #app-shell {
@@ -1038,6 +1043,12 @@
     body.simulate-mobile sidebar { display:none !important; }
     body.simulate-mobile .btn-view-mode { display:inline-flex !important; align-items:center; gap:4px; }
     body.simulate-mobile .calendar-area { padding: 12px 12px 0; }
+    body.simulate-mobile .btn-simulate-mobile { display:none !important; }
+    body.simulate-mobile header { padding: 0 12px; }
+    body.simulate-mobile .logo { font-size:14px; }
+    body.simulate-mobile .logo img { height: 22px; margin-right: 4px; }
+    body.simulate-mobile #darkToggle { display:none !important; }
+    body.simulate-mobile .legend { display:none !important; }
 
     .daou-overlay {
       display: none;
@@ -1065,7 +1076,7 @@
   </div>
   <div class="header-right">
     <button class="btn-dark btn-simulate-mobile" id="btn-simulate-mobile" onclick="toggleSimulateMobile()" title="모바일 레이아웃 미리보기">📱 모바일</button>
-    <button class="btn-dark" id="darkToggle" onclick="toggleDark()" title="다크모드 전환">🌙</button>
+    <button class="btn-dark" id="darkToggle" onclick="toggleDark()" title="다크모드 전환" style="display:none;">🌙</button>
     <button class="btn-add" onclick="openModal()">+ 일정 추가</button>
     <div class="avatar-wrap">
       <div class="user-avatar" id="user-avatar" onclick="toggleAvatarMenu()"></div>
@@ -1168,8 +1179,7 @@
       <div class="days-grid" id="days-grid"></div>
     </div>
 
-    <div id="agenda-view" class="agenda-view" style="display:none;"></div>
-    <div id="mobile-day-section" style="display:none; margin-top:16px; padding-bottom:24px;"></div>
+    <div id="mobile-day-section" style="display:none; padding-bottom:24px;"></div>
 
   </div>
 </div>
@@ -1708,11 +1718,10 @@
     renderGrid(year, month, _cachedData);
     if (isMobile() && !_mobileGrid) {
       document.getElementById('month-grid').style.display = 'none';
-      document.getElementById('agenda-view').style.display = '';
-      renderAgenda(year, month);
+      document.getElementById('mobile-day-section').style.display = '';
     } else {
       document.getElementById('month-grid').style.display = '';
-      document.getElementById('agenda-view').style.display = 'none';
+      document.getElementById('mobile-day-section').style.display = 'none';
     }
     renderMiniCal(year, month);
     // 기본값: 오늘 day view
@@ -1811,7 +1820,6 @@
     }
     saveState(state);
     renderGrid(curYear, curMonth, _cachedData);
-    if (isMobile() && !_mobileGrid) renderAgenda(curYear, curMonth);
     if (_selectedDayStr) openDayView(_selectedDayStr);
   }
 
@@ -2229,16 +2237,16 @@
     _mobileGrid = !_mobileGrid;
     const btn = document.getElementById('btn-view-mode');
     const grid = document.getElementById('month-grid');
-    const agenda = document.getElementById('agenda-view');
+    const mds  = document.getElementById('mobile-day-section');
     if (_mobileGrid) {
-      btn.textContent = '☰ 목록';
+      btn.textContent = '☰ 일정';
       grid.style.display = '';
-      agenda.style.display = 'none';
+      mds.style.display = 'none';
     } else {
       btn.textContent = '⊞ 그리드';
       grid.style.display = 'none';
-      agenda.style.display = '';
-      renderAgenda(curYear, curMonth);
+      mds.style.display = '';
+      openDayView(_selectedDayStr || `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`);
     }
   }
 
