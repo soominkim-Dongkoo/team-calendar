@@ -1196,6 +1196,26 @@
   </div>
 </div>
 
+<!-- 다우오피스 로그인 모달 -->
+<div class="daou-overlay" id="daou-overlay">
+  <div class="login-box">
+    <div class="login-logo">
+      <p style="font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">다우오피스 연동</p>
+      <p>회의실 예약 기능을 사용하려면 로그인하세요</p>
+    </div>
+    <div class="form-group">
+      <label>아이디</label>
+      <input type="text" id="daou-id" placeholder="다우오피스 아이디" autocomplete="username" />
+    </div>
+    <div class="form-group">
+      <label>비밀번호</label>
+      <input type="password" id="daou-pw" placeholder="비밀번호" autocomplete="current-password" />
+    </div>
+    <div class="login-error" id="daou-error"></div>
+    <button class="btn-login" id="daou-login-btn" onclick="submitDaouLogin()">로그인</button>
+  </div>
+</div>
+
 <!-- 일정 추가 모달 -->
 <div class="modal-overlay" id="modal">
   <div class="modal">
@@ -2416,25 +2436,6 @@
   }
 </script>
 
-<!-- 다우오피스 로그인 모달 -->
-<div class="daou-overlay" id="daou-overlay">
-  <div class="login-box">
-    <div class="login-logo">
-      <p style="font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">다우오피스 연동</p>
-      <p>회의실 예약 기능을 사용하려면 로그인하세요</p>
-    </div>
-    <div class="form-group">
-      <label>아이디</label>
-      <input type="text" id="daou-id" placeholder="다우오피스 아이디" autocomplete="username" />
-    </div>
-    <div class="form-group">
-      <label>비밀번호</label>
-      <input type="password" id="daou-pw" placeholder="비밀번호" autocomplete="current-password" />
-    </div>
-    <div class="login-error" id="daou-error"></div>
-    <button class="btn-login" id="daou-login-btn" onclick="submitDaouLogin()">로그인</button>
-  </div>
-</div>
 
 </body>
 </html>
