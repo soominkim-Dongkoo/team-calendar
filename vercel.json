@@ -1,15 +1,5 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "api/reserve.py", "use": "@vercel/python" },
-    { "src": "api/availability.py", "use": "@vercel/python" },
-    { "src": "*.html", "use": "@vercel/static" },
-    { "src": "*.svg", "use": "@vercel/static" }
-  ],
-  "routes": [
-    { "src": "/api/reserve", "dest": "/api/reserve.py" },
-    { "src": "/api/availability", "dest": "/api/availability.py" },
-    { "src": "/(.+\\.svg)", "dest": "/$1" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
