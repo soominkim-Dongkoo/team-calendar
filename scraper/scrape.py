@@ -305,9 +305,24 @@ def scrape():
             return links
 
         def redo_cancel_search():
-            page.goto(APPROVAL_URL)
+            page.goto(FOLDER_BASE_URL)
             page.wait_for_load_state("domcontentloaded")
-            page.wait_for_timeout(3000)
+            page.wait_for_timeout(2000)
+            try:
+                page.select_option("select[name='duration'], #duration", "all")
+            except Exception:
+                pass
+            try:
+                page.select_option("#searchtype", "formName")
+            except Exception:
+                page.select_option("select[name='searchtype']", "formName")
+            page.fill("#keyword, input[name='keyword']", "ERP Data 변경 요청서")
+            try:
+                page.click("button:has-text('검색')")
+            except Exception:
+                page.press("#keyword, input[name='keyword']", "Enter")
+            page.wait_for_load_state("domcontentloaded")
+            page.wait_for_timeout(2000)
 
         redo_cancel_search()
 
@@ -339,17 +354,24 @@ def scrape():
             page.wait_for_load_state("domcontentloaded")
             page.wait_for_timeout(1500)
 
-            # 상세내용에서 원본 문서번호 추출 (여러 방식 시도)
+            # iframe 포함 모든 frame에서 상세내용 / 계원- 패턴 탐색
             detail_text = ""
-            for row in page.query_selector_all("tr"):
-                cells = row.query_selector_all("th, td")
-                texts = [c.inner_text().strip().replace("\xa0", " ") for c in cells]
-                if len(texts) >= 2 and "상세내용" in texts[0]:
-                    detail_text = " ".join(texts[1:])
-                    break
-            if not detail_text:
-                # 테이블 구조가 다를 경우 전체 텍스트에서 탐색
-                detail_text = page.inner_text("body")
+            for frame in page.frames:
+                try:
+                    for row in frame.query_selector_all("tr"):
+                        cells = row.query_selector_all("th, td")
+                        texts = [c.inner_text().strip().replace("\xa0", " ") for c in cells]
+                        if len(texts) >= 2 and "상세내용" in texts[0]:
+                            detail_text = " ".join(texts[1:])
+                            break
+                    if detail_text:
+                        break
+                    frame_text = frame.inner_text("body")
+                    if "계원-" in frame_text:
+                        detail_text = frame_text
+                        break
+                except Exception:
+                    continue
 
             target_doc_id = extract_target_doc_id(detail_text)
             if target_doc_id:
