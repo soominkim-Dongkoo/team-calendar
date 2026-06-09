@@ -293,51 +293,68 @@ def scrape():
         processed_cancel_ids = load_processed_cancel_ids()
         cancel_count = 0
 
-        page.goto(FOLDER_BASE_URL)
-        page.wait_for_load_state("domcontentloaded")
-        page.wait_for_timeout(2000)
-        try:
-            page.select_option("select[name='duration'], #duration", "all")
-        except Exception:
-            pass
-        try:
-            page.select_option("#searchtype", "formName")
-        except Exception:
-            page.select_option("select[name='searchtype']", "formName")
-        page.fill("#keyword, input[name='keyword']", "ERP Data 변경 요청서")
-        try:
-            page.click("button:has-text('검색')")
-        except Exception:
-            page.press("#keyword, input[name='keyword']", "Enter")
-        page.wait_for_load_state("domcontentloaded")
-        page.wait_for_timeout(3000)
+        def get_cancel_links():
+            rows = page.query_selector_all("tr")
+            links = []
+            for row in rows:
+                form_el = row.query_selector("td:nth-child(3)")
+                if form_el and "ERP Data 변경 요청서" in form_el.inner_text():
+                    link_el = row.query_selector("td:nth-child(5) a")
+                    if link_el:
+                        links.append(link_el)
+            return links
+
+        def redo_cancel_search():
+            page.goto(FOLDER_BASE_URL)
+            page.wait_for_load_state("domcontentloaded")
+            page.wait_for_timeout(2000)
+            try:
+                page.select_option("select[name='duration'], #duration", "all")
+            except Exception:
+                pass
+            try:
+                page.select_option("#searchtype", "formName")
+            except Exception:
+                page.select_option("select[name='searchtype']", "formName")
+            page.fill("#keyword, input[name='keyword']", "ERP Data 변경 요청서")
+            try:
+                page.click("button:has-text('검색')")
+            except Exception:
+                page.press("#keyword, input[name='keyword']", "Enter")
+            page.wait_for_load_state("domcontentloaded")
+            page.wait_for_timeout(2000)
+
+        redo_cancel_search()
 
         cancel_rows = page.query_selector_all("tr")
         cancel_targets = []
         for row in cancel_rows:
             form_el = row.query_selector("td:nth-child(3)")
             if form_el and "ERP Data 변경 요청서" in form_el.inner_text():
-                link_el = row.query_selector("td:nth-child(5) a")
-                doc_el  = row.query_selector("td:nth-child(8)")
-                if link_el and doc_el:
-                    cancel_targets.append({
-                        "doc_id": doc_el.inner_text().strip(),
-                        "link":   link_el,
-                    })
+                doc_el = row.query_selector("td:nth-child(8)")
+                if doc_el:
+                    cancel_targets.append({"doc_id": doc_el.inner_text().strip()})
 
         print(f"취소 문서: {len(cancel_targets)}건 발견")
 
-        for item in cancel_targets:
+        for i, item in enumerate(cancel_targets):
             doc_id = item["doc_id"]
             if doc_id in processed_cancel_ids:
                 print(f"  취소 이미 처리됨, 스킵: {doc_id}")
                 continue
 
-            item["link"].click()
+            cancel_links = get_cancel_links()
+            if len(cancel_links) < len(cancel_targets):
+                redo_cancel_search()
+                cancel_links = get_cancel_links()
+            if i >= len(cancel_links):
+                continue
+
+            cancel_links[i].click()
             page.wait_for_load_state("domcontentloaded")
             page.wait_for_timeout(1500)
 
-            # 상세내용에서 원본 문서번호 추출
+            # 상세내용에서 원본 문서번호 추출 (여러 방식 시도)
             detail_text = ""
             for row in page.query_selector_all("tr"):
                 cells = row.query_selector_all("th, td")
@@ -345,21 +362,27 @@ def scrape():
                 if len(texts) >= 2 and "상세내용" in texts[0]:
                     detail_text = " ".join(texts[1:])
                     break
+            if not detail_text:
+                # 테이블 구조가 다를 경우 전체 텍스트에서 탐색
+                detail_text = page.inner_text("body")
 
             target_doc_id = extract_target_doc_id(detail_text)
             if target_doc_id:
                 supabase.table("leave_records").delete().eq("doc_id", target_doc_id).execute()
                 print(f"  취소 처리: {doc_id} → 삭제 대상 {target_doc_id}")
             else:
-                print(f"  취소 문서 {doc_id}: 문서번호 미발견 (상세내용: {detail_text[:60]})")
+                print(f"  취소 문서 {doc_id}: 문서번호 미발견")
 
             save_cancel_record(doc_id, target_doc_id or "")
             processed_cancel_ids.add(doc_id)
             cancel_count += 1
 
-            page.go_back()
+            try:
+                page.click("button:has-text('목록'), a:has-text('목록')", timeout=2000)
+            except Exception:
+                page.go_back()
             page.wait_for_load_state("domcontentloaded")
-            page.wait_for_timeout(500)
+            page.wait_for_timeout(1000)
         # ────────────────────────────────────────────────────
 
         browser.close()
