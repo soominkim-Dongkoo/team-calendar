@@ -1020,12 +1020,20 @@
     .agenda-time { font-size:11px; color:var(--text-muted); white-space:nowrap; }
     .agenda-empty{ text-align:center; padding:48px 0; color:var(--text-muted); font-size:14px; }
     .btn-view-mode { display:none; padding:5px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text-secondary); font-size:12px; font-family:inherit; cursor:pointer; white-space:nowrap; }
+    #mobile-day-section { border-top: 2px solid var(--border); padding-top: 12px; }
+    #mobile-day-section .day-view { display: flex; flex-direction: column; gap: 10px; }
 
     @media (max-width: 768px) {
       sidebar { display:none !important; }
       .btn-view-mode { display:inline-flex; align-items:center; gap:4px; }
       .calendar-area { padding: 12px 12px 0; }
       .btn-simulate-mobile { display:none !important; }
+    }
+    body.simulate-mobile { background:#4a5568; justify-content:flex-start; align-items:center; }
+    body.simulate-mobile #app-shell {
+      width: 390px; max-width: 390px; min-height: 100vh;
+      background: var(--bg); overflow-x: hidden;
+      box-shadow: 0 0 40px rgba(0,0,0,0.5);
     }
     body.simulate-mobile sidebar { display:none !important; }
     body.simulate-mobile .btn-view-mode { display:inline-flex !important; align-items:center; gap:4px; }
@@ -1044,6 +1052,7 @@
   </style>
 </head>
 <body>
+<div id="app-shell">
 
 <!-- 헤더 -->
 <header>
@@ -1160,9 +1169,12 @@
     </div>
 
     <div id="agenda-view" class="agenda-view" style="display:none;"></div>
+    <div id="mobile-day-section" style="display:none; margin-top:16px; padding-bottom:24px;"></div>
 
   </div>
 </div>
+
+</div><!-- /app-shell -->
 
 <!-- 로그인 -->
 <div class="login-overlay" id="login-overlay">
@@ -2030,6 +2042,13 @@
     }
 
     document.getElementById('day-view').style.display = '';
+
+    // 모바일: mobile-day-section에 동일 내용 복사
+    if (isMobile() && !_mobileGrid) {
+      const mds = document.getElementById('mobile-day-section');
+      mds.style.display = '';
+      mds.innerHTML = document.getElementById('day-view').innerHTML;
+    }
   }
 
   const DAY_TYPE_TIME = {
@@ -2303,6 +2322,8 @@
     const el  = document.getElementById('agenda-view');
     const r   = el._agendaMap?.[d]?.[idx];
     if (r) openDetail(r, itemEl);
+    openDayView(d);
+    document.getElementById('mobile-day-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   // ─────────────────────────────────────────────────────
 
