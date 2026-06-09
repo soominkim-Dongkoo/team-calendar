@@ -1780,6 +1780,7 @@
     // 해당 날짜 일정 필터 (currentView + activeTypes 적용)
     const activeTypes = getActiveTypes();
     const all = (_cachedData || []).filter(r => {
+      if (r._source === 'leave') return false;
       if (r.start_date > dateStr || r.end_date < dateStr) return false;
       if (!activeTypes.has(r._chipClass)) return false;
       if (r._source === 'leave') {
