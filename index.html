@@ -61,7 +61,8 @@
       height: 60px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
+      gap: 16px;
       position: sticky;
       top: 0;
       z-index: 100;
@@ -74,11 +75,19 @@
     }
 
     .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       font-size: 18px;
       font-weight: 700;
       color: #4361ee;
       letter-spacing: -0.5px;
+      text-decoration: none;
     }
+    .logo img { height: 28px; }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.25; }
+    .logo-team { font-size: 16px; font-weight: 700; color: #4361ee; }
+    .logo-sub { display: none; font-size: 11px; font-weight: 500; color: var(--text-muted); letter-spacing: -0.2px; }
 
     .view-toggle {
       display: flex;
@@ -111,6 +120,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      margin-left: auto;
     }
 
     .btn-add {
@@ -1020,26 +1030,45 @@
     .agenda-time { font-size:11px; color:var(--text-muted); white-space:nowrap; }
     .agenda-empty{ text-align:center; padding:48px 0; color:var(--text-muted); font-size:14px; }
     .btn-view-mode { display:none; padding:5px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text-secondary); font-size:12px; font-family:inherit; cursor:pointer; white-space:nowrap; }
-    .mobile-add-btn { display:none; padding:4px 8px; font-size:16px; line-height:1; }
-    #mobile-day-section { border-top: 2px solid var(--border); padding-top: 12px; }
+    .cal-add-btn { display:none; }
+    .desktop-add-btn { }
+    #mobile-day-section { padding-top: 0; }
     #mobile-day-section .day-view { display: flex; flex-direction: column; gap: 10px; }
+    .mobile-legend-row { display:flex; flex-wrap:wrap; gap:10px; padding:8px 0 6px; border-bottom:1px solid var(--border); margin-bottom:4px; }
+    .mobile-legend-row .legend-item { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-secondary); cursor:pointer; }
+    .mobile-legend-row .legend-item input { width:13px; height:13px; accent-color:#4361ee; cursor:pointer; }
+    .mobile-legend-row .legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .mobile-date-nav { position:relative; padding:4px 0 8px; }
+    .mobile-date-btn { display:flex; align-items:center; gap:5px; background:none; border:none; font-family:inherit; font-size:16px; font-weight:700; color:var(--text-primary); cursor:pointer; padding:4px 0; }
+    .mobile-date-arrow { font-size:9px; color:var(--text-muted); }
+    .mobile-date-dropdown { position:absolute; top:100%; left:0; right:0; background:var(--surface); border:1px solid var(--border); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.12); max-height:220px; overflow-y:auto; z-index:200; }
+    .mobile-date-item { display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-bottom:1px solid var(--border); cursor:pointer; font-family:inherit; font-size:13px; color:var(--text-primary); }
+    .mobile-date-item:last-child { border-bottom:none; }
+    .mobile-date-item:hover { background:var(--hover); }
+    .mobile-date-item.selected { color:#4361ee; font-weight:600; }
 
-    /* 모바일/시뮬레이트 공통 믹스인 - 두 곳 모두 적용 */
+    /* ── 모바일 레이아웃 ── */
     @media (max-width: 768px) {
       sidebar { display:none !important; }
-      .btn-view-mode { display:inline-flex; align-items:center; gap:4px; }
       .calendar-area { padding: 10px 12px 0; }
       .btn-simulate-mobile { display:none !important; }
-      header { padding: 0 10px; height:50px; }
-      .logo { font-size:13px; }
-      .logo img { height: 20px; margin-right: 4px; }
       #darkToggle { display:none !important; }
-      .btn-add:not(.mobile-add-btn) { display:none !important; }
-      .mobile-add-btn { display:inline-flex !important; }
-      .cal-header-row { position:static !important; flex-wrap:wrap; gap:4px; }
-      .cal-nav { position:static !important; transform:none !important; }
-      #mobile-date-picker { display:block !important; }
+      .desktop-add-btn { display:none !important; }
+      /* 헤더: 2줄 (로고+우측) + (team/my 중앙) */
+      header { flex-wrap:wrap; height:auto; padding:6px 12px 0; gap:0; align-items:center; }
+      .logo { flex:1 0 auto; order:1; }
+      .header-right { flex:0 0 auto; order:2; gap:6px; margin-left:0; }
+      .view-toggle { flex:0 0 100%; order:3; justify-content:center; padding:4px 0 6px; }
+      .logo img { height:20px; }
+      .logo-team { font-size:12px; }
+      .logo-sub { display:block; }
+      /* 캘린더 헤더 행 */
+      .cal-header-row .legend { display:none !important; }
+      .cal-add-btn { display:inline-flex !important; padding:6px 12px; font-size:12px; }
+      /* btn-view-mode → 헤더에 표시 */
+      .btn-view-mode { display:inline-flex !important; align-items:center; gap:4px; }
     }
+    /* ── 모바일 시뮬레이트 (데스크톱에서 미리보기) ── */
     body.simulate-mobile {
       background:#4a5568;
       justify-content:flex-start;
@@ -1051,18 +1080,20 @@
       box-shadow:0 0 40px rgba(0,0,0,0.5);
     }
     body.simulate-mobile sidebar { display:none !important; }
-    body.simulate-mobile .btn-view-mode { display:inline-flex !important; align-items:center; gap:4px; }
     body.simulate-mobile .calendar-area { padding: 10px 12px 0; }
     body.simulate-mobile .btn-simulate-mobile { display:none !important; }
-    body.simulate-mobile header { padding: 0 10px; height:50px; }
-    body.simulate-mobile .logo { font-size:13px; }
-    body.simulate-mobile .logo img { height: 20px; margin-right: 4px; }
     body.simulate-mobile #darkToggle { display:none !important; }
-    body.simulate-mobile .btn-add:not(.mobile-add-btn) { display:none !important; }
-    body.simulate-mobile .mobile-add-btn { display:inline-flex !important; }
-    body.simulate-mobile .cal-header-row { position:static !important; flex-wrap:wrap; gap:4px; }
-    body.simulate-mobile .cal-nav { position:static !important; transform:none !important; }
-    body.simulate-mobile #mobile-date-picker { display:block !important; }
+    body.simulate-mobile .desktop-add-btn { display:none !important; }
+    body.simulate-mobile header { flex-wrap:wrap; height:auto; padding:6px 12px 0; gap:0; align-items:center; }
+    body.simulate-mobile .logo { flex:1 0 auto; order:1; }
+    body.simulate-mobile .header-right { flex:0 0 auto; order:2; gap:6px; margin-left:0; }
+    body.simulate-mobile .view-toggle { flex:0 0 100%; order:3; justify-content:center; padding:4px 0 6px; }
+    body.simulate-mobile .logo img { height:20px; }
+    body.simulate-mobile .logo-team { font-size:12px; }
+    body.simulate-mobile .logo-sub { display:block; }
+    body.simulate-mobile .cal-header-row .legend { display:none !important; }
+    body.simulate-mobile .cal-add-btn { display:inline-flex !important; padding:6px 12px; font-size:12px; }
+    body.simulate-mobile .btn-view-mode { display:inline-flex !important; align-items:center; gap:4px; }
 
     .daou-overlay {
       display: none;
@@ -1081,17 +1112,22 @@
 
 <!-- 헤더 -->
 <header>
-  <div class="header-left">
-    <div class="logo"><img src="dongkoo-logo_2.svg" alt="동국바이오제약" style="height:28px; vertical-align:middle; margin-right:8px;">경영기획팀 Calendar</div>
-    <div class="view-toggle">
-      <button class="active" onclick="setView('team', this)">Team</button>
-      <button onclick="setView('personal', this)">My</button>
+  <div class="logo">
+    <img src="dongkoo-logo_2.svg" alt="동국바이오제약">
+    <div class="logo-text">
+      <span class="logo-team">경영기획팀</span>
+      <span class="logo-sub">캘린더</span>
     </div>
   </div>
+  <div class="view-toggle">
+    <button class="active" onclick="setView('team', this)">Team</button>
+    <button onclick="setView('personal', this)">My</button>
+  </div>
   <div class="header-right">
+    <button class="btn-view-mode" id="btn-view-mode" onclick="toggleMobileView()">달력</button>
     <button class="btn-dark btn-simulate-mobile" id="btn-simulate-mobile" onclick="toggleSimulateMobile()" title="모바일 레이아웃 미리보기">📱 모바일</button>
     <button class="btn-dark" id="darkToggle" onclick="toggleDark()" title="다크모드 전환">🌙</button>
-    <button class="btn-add" onclick="openModal()">+ 일정 추가</button>
+    <button class="btn-add desktop-add-btn" onclick="openModal()">+ 일정 추가</button>
     <div class="avatar-wrap">
       <div class="user-avatar" id="user-avatar" onclick="toggleAvatarMenu()"></div>
       <div class="avatar-menu" id="avatar-menu">
@@ -1179,16 +1215,10 @@
         <button onclick="moveMonth(-1)">‹</button>
         <h2 id="cal-title">로딩 중...</h2>
         <button onclick="moveMonth(1)">›</button>
-        <button class="btn-add mobile-add-btn" onclick="openModal()">+</button>
       </div>
-      <div style="width:140px;display:flex;justify-content:flex-end;gap:6px;align-items:center;">
-        <button class="btn-view-mode" id="btn-view-mode" onclick="toggleMobileView()">⊞ 그리드</button>
+      <div style="width:140px;display:flex;justify-content:flex-end;align-items:center;">
+        <button class="btn-add cal-add-btn" onclick="openModal()">+ 일정 추가</button>
       </div>
-    </div>
-
-    <!-- 모바일 날짜 선택 -->
-    <div id="mobile-date-picker" style="display:none; padding:8px 0 4px;">
-      <select id="mobile-date-select" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text-secondary);font-size:14px;font-family:inherit;"></select>
     </div>
 
     <div class="month-grid" id="month-grid">
@@ -1199,7 +1229,17 @@
       <div class="days-grid" id="days-grid"></div>
     </div>
 
-    <div id="mobile-day-section" style="display:none; padding-bottom:24px;"></div>
+    <div id="mobile-day-section" style="display:none; padding-bottom:24px;">
+      <div id="mobile-legend-row" class="mobile-legend-row"></div>
+      <div class="mobile-date-nav">
+        <button id="mobile-date-btn" class="mobile-date-btn" onclick="toggleMobileDateDropdown()">
+          <span id="mobile-date-label">오늘</span>
+          <span class="mobile-date-arrow">▼</span>
+        </button>
+        <div id="mobile-date-dropdown" class="mobile-date-dropdown" style="display:none;"></div>
+      </div>
+      <div id="mobile-day-content"></div>
+    </div>
 
   </div>
 </div>
@@ -1707,7 +1747,7 @@
     _mobileGrid = false;
     document.body.classList.toggle('simulate-mobile', _forceMobile);
     document.getElementById('btn-simulate-mobile').textContent = _forceMobile ? '🖥 데스크톱' : '📱 모바일';
-    document.getElementById('btn-view-mode').textContent = '⊞ 그리드';
+    document.getElementById('btn-view-mode').textContent = '달력';
     loadAndRender(curYear, curMonth);
     if (!_forceMobile) openDayView(_selectedDayStr || `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`);
   }
@@ -1736,15 +1776,12 @@
 
     _cachedData = [...leaves, ...events];
     renderGrid(year, month, _cachedData);
-    const dp = document.getElementById('mobile-date-picker');
     if (isMobile() && !_mobileGrid) {
       document.getElementById('month-grid').style.display = 'none';
       document.getElementById('mobile-day-section').style.display = '';
-      if (dp) dp.style.display = '';
     } else {
       document.getElementById('month-grid').style.display = '';
       document.getElementById('mobile-day-section').style.display = 'none';
-      if (dp && isMobile()) dp.style.display = 'none';
     }
     updateMobileDatePicker(year, month);
     renderMiniCal(year, month);
@@ -1758,21 +1795,40 @@
   }
 
   function updateMobileDatePicker(year, month) {
-    const sel = document.getElementById('mobile-date-select');
-    if (!sel) return;
+    const dropdown = document.getElementById('mobile-date-dropdown');
+    if (!dropdown) return;
     const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
     const totalDays = new Date(year, month + 1, 0).getDate();
     const todayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
-    sel.innerHTML = '';
+    const selected = _selectedDayStr || todayStr;
+    dropdown.innerHTML = '';
     for (let d = 1; d <= totalDays; d++) {
-      const dateStr = `${year}-${pad(month+1)}-${pad(d)}`;
+      const ds = `${year}-${pad(month+1)}-${pad(d)}`;
       const dayName = DAYS[new Date(year, month, d).getDay()];
-      const opt = document.createElement('option');
-      opt.value = dateStr;
-      opt.textContent = `${month+1}월 ${d}일 (${dayName})`;
-      if (dateStr === (_selectedDayStr || todayStr)) opt.selected = true;
-      sel.appendChild(opt);
+      const item = document.createElement('button');
+      item.className = 'mobile-date-item' + (ds === selected ? ' selected' : '');
+      item.textContent = `${month+1}월 ${d}일 (${dayName})`;
+      item.onclick = () => { _selectedDayStr = ds; openDayView(ds); };
+      dropdown.appendChild(item);
     }
+  }
+
+  function updateMobileLegend() {
+    const row = document.getElementById('mobile-legend-row');
+    if (!row) return;
+    const src = currentView === 'team'
+      ? document.getElementById('legend-team')
+      : document.getElementById('legend-personal');
+    row.innerHTML = src ? src.innerHTML : '';
+  }
+
+  function toggleMobileDateDropdown() {
+    const dd = document.getElementById('mobile-date-dropdown');
+    const arrow = document.querySelector('.mobile-date-arrow');
+    if (!dd) return;
+    const open = dd.style.display === 'none';
+    dd.style.display = open ? '' : 'none';
+    if (arrow) arrow.textContent = open ? '▲' : '▼';
   }
 
   function moveMonth(delta) {
@@ -1876,12 +1932,6 @@
     document.getElementById('darkToggle').textContent = '☀️';
   }
 
-  document.getElementById('mobile-date-select').addEventListener('change', function() {
-    if (this.value) {
-      _selectedDayStr = this.value;
-      openDayView(this.value);
-    }
-  });
 
   const CHIP_TYPE_ORDER = { 'chip-company': 0, 'chip-meeting': 1, 'chip-vacation': 2, 'chip-personal': 3 };
   const NAME_ORDER = { '황유준': 0, '김수민': 1, '김경수': 2 };
@@ -1920,10 +1970,6 @@
 
   function openDayView(dateStr) {
     _selectedDayStr = dateStr;
-
-    // 모바일 날짜 드롭다운 동기화
-    const sel = document.getElementById('mobile-date-select');
-    if (sel && sel.value !== dateStr) sel.value = dateStr;
 
     // 미니캘린더 selected 표시
     document.querySelectorAll('.mini-grid .day').forEach(d =>
@@ -2104,11 +2150,22 @@
 
     document.getElementById('day-view').style.display = '';
 
-    // 모바일: mobile-day-section에 동일 내용 복사
+    // 모바일: mobile-day-section 업데이트
     if (isMobile() && !_mobileGrid) {
       const mds = document.getElementById('mobile-day-section');
       mds.style.display = '';
-      mds.innerHTML = document.getElementById('day-view').innerHTML;
+      const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
+      const dt = new Date(dateStr + 'T00:00:00');
+      const label = `${dt.getMonth()+1}월 ${dt.getDate()}일 (${DAYS[dt.getDay()]})`;
+      const dateLabel = document.getElementById('mobile-date-label');
+      if (dateLabel) dateLabel.textContent = label;
+      const content = document.getElementById('mobile-day-content');
+      if (content) content.innerHTML = document.getElementById('day-view').innerHTML;
+      updateMobileLegend();
+      const dd = document.getElementById('mobile-date-dropdown');
+      if (dd) dd.style.display = 'none';
+      const arrow = document.querySelector('.mobile-date-arrow');
+      if (arrow) arrow.textContent = '▼';
     }
   }
 
@@ -2288,20 +2345,17 @@
   // ── 모바일 아젠다 뷰 ──────────────────────────────────
   function toggleMobileView() {
     _mobileGrid = !_mobileGrid;
-    const btn = document.getElementById('btn-view-mode');
+    const btn  = document.getElementById('btn-view-mode');
     const grid = document.getElementById('month-grid');
     const mds  = document.getElementById('mobile-day-section');
-    const dp   = document.getElementById('mobile-date-picker');
     if (_mobileGrid) {
-      btn.textContent = '☰ 일정';
+      btn.textContent = '달력';
       grid.style.display = '';
       mds.style.display = 'none';
-      if (dp) dp.style.display = 'none';
     } else {
-      btn.textContent = '⊞ 그리드';
+      btn.textContent = '달력';
       grid.style.display = 'none';
       mds.style.display = '';
-      if (dp) dp.style.display = '';
       openDayView(_selectedDayStr || `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`);
     }
   }
