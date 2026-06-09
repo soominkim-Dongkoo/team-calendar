@@ -1003,6 +1003,30 @@
     .avatar-menu-btn { width: 100%; border: none; background: none; text-align: left; padding: 8px 10px; border-radius: 6px; font-size: 13px; color: #e53e3e; font-weight: 600; font-family: inherit; cursor: pointer; }
     .avatar-menu-btn:hover { background: #fff5f5; }
 
+    /* ── 아젠다 뷰 ── */
+    .agenda-view { padding: 4px 0; }
+    .agenda-date-row { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+    .agenda-date { min-width: 48px; display: flex; flex-direction: column; align-items: center; padding-top: 2px; }
+    .agenda-day-num { font-size: 20px; font-weight: 700; color: var(--text-primary); line-height: 1.1; }
+    .agenda-dow  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .agenda-date.is-today .agenda-day-num { background:#4361ee; color:#fff; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:15px; }
+    .agenda-date.is-sun .agenda-dow { color:#e53e3e; }
+    .agenda-date.is-sat .agenda-dow { color:#4361ee; }
+    .agenda-events { flex:1; display:flex; flex-direction:column; gap:4px; }
+    .agenda-item { display:flex; align-items:center; gap:8px; padding:5px 8px; border-radius:7px; cursor:pointer; }
+    .agenda-item:hover { background:var(--hover); }
+    .agenda-dot  { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .agenda-label{ font-size:13px; color:var(--text-secondary); flex:1; }
+    .agenda-time { font-size:11px; color:var(--text-muted); white-space:nowrap; }
+    .agenda-empty{ text-align:center; padding:48px 0; color:var(--text-muted); font-size:14px; }
+    .btn-view-mode { display:none; padding:5px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text-secondary); font-size:12px; font-family:inherit; cursor:pointer; white-space:nowrap; }
+
+    @media (max-width: 768px) {
+      sidebar { display:none !important; }
+      .btn-view-mode { display:inline-flex; align-items:center; gap:4px; }
+      .calendar-area { padding: 12px 12px 0; }
+    }
+
     .daou-overlay {
       display: none;
       position: fixed;
@@ -1117,16 +1141,20 @@
         <h2 id="cal-title">로딩 중...</h2>
         <button onclick="moveMonth(1)">›</button>
       </div>
-      <div style="width:140px;"></div>
+      <div style="width:140px;display:flex;justify-content:flex-end;">
+        <button class="btn-view-mode" id="btn-view-mode" onclick="toggleMobileView()">⊞ 그리드</button>
+      </div>
     </div>
 
-    <div class="month-grid">
+    <div class="month-grid" id="month-grid">
       <div class="weekday-header">
         <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div>
         <div>THU</div><div>FRI</div><div>SAT</div>
       </div>
       <div class="days-grid" id="days-grid"></div>
     </div>
+
+    <div id="agenda-view" class="agenda-view" style="display:none;"></div>
 
   </div>
 </div>
@@ -1623,6 +1651,8 @@
   const EVENT_TYPE_CHIP = { company: 'chip-company', meeting: 'chip-meeting', work: 'chip-work', personal: 'chip-personal' };
 
   let _cachedData = [];
+  let _mobileGrid = false;
+  function isMobile() { return window.innerWidth <= 768; }
 
   function getActiveTypes() {
     const state = loadState();
@@ -1648,6 +1678,14 @@
 
     _cachedData = [...leaves, ...events];
     renderGrid(year, month, _cachedData);
+    if (isMobile() && !_mobileGrid) {
+      document.getElementById('month-grid').style.display = 'none';
+      document.getElementById('agenda-view').style.display = '';
+      renderAgenda(year, month);
+    } else {
+      document.getElementById('month-grid').style.display = '';
+      document.getElementById('agenda-view').style.display = 'none';
+    }
     renderMiniCal(year, month);
     // 기본값: 오늘 day view
     if (!_selectedDayStr) {
@@ -1745,6 +1783,7 @@
     }
     saveState(state);
     renderGrid(curYear, curMonth, _cachedData);
+    if (isMobile() && !_mobileGrid) renderAgenda(curYear, curMonth);
     if (_selectedDayStr) openDayView(_selectedDayStr);
   }
 
@@ -2149,6 +2188,107 @@
     document.getElementById('avail-panel').style.display = 'none';
   }
   // ──────────────────────────────────────────────────────
+
+  // ── 모바일 아젠다 뷰 ──────────────────────────────────
+  function toggleMobileView() {
+    _mobileGrid = !_mobileGrid;
+    const btn = document.getElementById('btn-view-mode');
+    const grid = document.getElementById('month-grid');
+    const agenda = document.getElementById('agenda-view');
+    if (_mobileGrid) {
+      btn.textContent = '☰ 목록';
+      grid.style.display = '';
+      agenda.style.display = 'none';
+    } else {
+      btn.textContent = '⊞ 그리드';
+      grid.style.display = 'none';
+      agenda.style.display = '';
+      renderAgenda(curYear, curMonth);
+    }
+  }
+
+  function renderAgenda(year, month) {
+    const el = document.getElementById('agenda-view');
+    const firstStr = `${year}-${pad(month+1)}-01`;
+    const lastDay  = new Date(year, month+1, 0).getDate();
+    const lastStr  = `${year}-${pad(month+1)}-${pad(lastDay)}`;
+    const todayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+    const WEEKDAY  = ['일','월','화','수','목','금','토'];
+    const activeTypes = getActiveTypes();
+
+    const filtered = (_cachedData || []).filter(r => {
+      if (r.start_date > lastStr || r.end_date < firstStr) return false;
+      if (!activeTypes.has(r._chipClass)) return false;
+      if (r._source === 'leave') {
+        if (EXCLUDED_NAMES.has(r.name)) return false;
+        if (currentView === 'personal') return r.name === currentUser?.name;
+        return true;
+      }
+      if (currentView === 'team') return r.is_team === true;
+      return !r.is_team && r.owner === currentUser?.user_id;
+    });
+
+    // 날짜별 그룹 (시작일 기준, 월 범위 내 클램프)
+    const byDate = {};
+    filtered.forEach(r => {
+      const d = r.start_date < firstStr ? firstStr : r.start_date;
+      if (!byDate[d]) byDate[d] = [];
+      byDate[d].push(r);
+    });
+
+    const dates = Object.keys(byDate).sort();
+    if (!dates.length) {
+      el.innerHTML = '<div class="agenda-empty">이번 달 일정이 없습니다</div>';
+      return;
+    }
+
+    el.innerHTML = dates.map(d => {
+      const dt  = new Date(d + 'T00:00:00');
+      const dow = WEEKDAY[dt.getDay()];
+      const cls = [
+        'agenda-date',
+        d === todayStr ? 'is-today' : '',
+        dt.getDay() === 0 ? 'is-sun' : '',
+        dt.getDay() === 6 ? 'is-sat' : '',
+      ].filter(Boolean).join(' ');
+
+      const items = byDate[d].map((r, idx) => {
+        const color = CHIP_COLOR[r._chipClass] || '#718096';
+        const label = r._source === 'leave'
+          ? `${r.name} ${r.label}${r.day_type !== '종일' ? ' ' + r.day_type : ''}`
+          : r.title;
+        const time = (r._source === 'event' && r.start_time)
+          ? `${r.start_time.slice(0,5)}${r.end_time ? '~' + r.end_time.slice(0,5) : ''}`
+          : (r._source === 'leave' && r.day_type !== '종일' ? r.day_type : '');
+        return `<div class="agenda-item" data-date="${d}" data-idx="${idx}" onclick="_agendaClick(this)">
+          <span class="agenda-dot" style="background:${color}"></span>
+          <span class="agenda-label">${label}</span>
+          ${time ? `<span class="agenda-time">${time}</span>` : ''}
+        </div>`;
+      }).join('');
+
+      return `<div class="agenda-date-row">
+        <div class="${cls}">
+          <span class="agenda-day-num">${dt.getDate()}</span>
+          <span class="agenda-dow">${dow}</span>
+        </div>
+        <div class="agenda-events">${items}</div>
+      </div>`;
+    }).join('');
+
+    // 클릭 데이터 캐시
+    el._agendaMap = {};
+    dates.forEach(d => { el._agendaMap[d] = byDate[d]; });
+  }
+
+  function _agendaClick(itemEl) {
+    const d   = itemEl.dataset.date;
+    const idx = parseInt(itemEl.dataset.idx, 10);
+    const el  = document.getElementById('agenda-view');
+    const r   = el._agendaMap?.[d]?.[idx];
+    if (r) openDetail(r, itemEl);
+  }
+  // ─────────────────────────────────────────────────────
 
   let _toastTimer = null;
   function showToast(msg, type = '') {
