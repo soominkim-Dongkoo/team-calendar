@@ -27,9 +27,12 @@ _H = {
 }
 
 
-def _login():
+def _get_session(cookie: str = None):
     s = requests.Session()
     s.headers['User-Agent'] = 'Mozilla/5.0'
+    if cookie:
+        s.headers['Cookie'] = cookie
+        return s
     s.post(f'{BASE}/api/login', json={
         'username': os.environ.get('DAOU_ID'),
         'password': os.environ.get('DAOU_PW'),
@@ -50,7 +53,8 @@ class handler(BaseHTTPRequestHandler):
             return
 
         try:
-            sess = _login()
+            cookie = self.headers.get('X-Daou-Session')
+            sess = _get_session(cookie)
             r = sess.get(
                 f"{BASE}/api/asset/20/items/daily"
                 f"?fromDate={date}T00:00:00.000%2B09:00"

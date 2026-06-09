@@ -34,9 +34,12 @@ _DAOU_HEADERS = {
 }
 
 
-def _login() -> requests.Session:
+def _get_session(cookie: str = None) -> requests.Session:
     sess = requests.Session()
     sess.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+    if cookie:
+        sess.headers['Cookie'] = cookie
+        return sess
     r = sess.post(f'{BASE}/api/login', json={
         'username': os.environ.get('DAOU_ID'),
         'password': os.environ.get('DAOU_PW'),
@@ -53,7 +56,7 @@ def _to_kst(s: str) -> str:
     return s[:19] + '.000+09:00'
 
 
-def _create(sess: requests.Session, room: str, title: str, start: str, end: str, user_id: str = None) -> int:
+def _create(sess: requests.Session, room: str, title: str, start: str, end: str) -> int:
     info = ROOM_MAP.get(room)
     if not info:
         raise ValueError(f'알 수 없는 회의실: {room}')
@@ -64,7 +67,6 @@ def _create(sess: requests.Session, room: str, title: str, start: str, end: str,
         'startTime':  _to_kst(start),
         'endTime':    _to_kst(end),
         'useAnonym':  False,
-        'user':       {'id': user_id or os.environ.get('DAOU_USER_ID', '645')},
         'properties': [{'attributeId': '33', 'content': title}],
         'allday':     False,
     }
@@ -115,10 +117,13 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         req = self._body()
-        user_id = req.get('userId') or os.environ.get('DAOU_USER_ID', '645')
+        cookie = self.headers.get('X-Daou-Session')
+        if not cookie:
+            self._err(401, '다우오피스 로그인이 필요합니다.')
+            return
         try:
-            sess = _login()
-            rid = _create(sess, req['room'], req['title'], req['start'], req['end'], user_id)
+            sess = _get_session(cookie)
+            rid = _create(sess, req['room'], req['title'], req['start'], req['end'])
             self._ok({'ok': True, 'reservation_id': rid})
         except (ValueError, RuntimeError) as e:
             self._err(502, str(e))
@@ -128,12 +133,15 @@ class handler(BaseHTTPRequestHandler):
     def do_PUT(self):
         req = self._body()
         old_id = req.get('reservation_id')
-        user_id = req.get('userId') or os.environ.get('DAOU_USER_ID', '645')
+        cookie = self.headers.get('X-Daou-Session')
+        if not cookie:
+            self._err(401, '다우오피스 로그인이 필요합니다.')
+            return
         try:
-            sess = _login()
+            sess = _get_session(cookie)
             if old_id:
                 _delete(sess, int(old_id))
-            new_id = _create(sess, req['room'], req['title'], req['start'], req['end'], user_id)
+            new_id = _create(sess, req['room'], req['title'], req['start'], req['end'])
             self._ok({'ok': True, 'reservation_id': new_id})
         except (ValueError, RuntimeError) as e:
             self._err(502, str(e))
@@ -146,8 +154,9 @@ class handler(BaseHTTPRequestHandler):
         if not rid:
             self._err(400, 'reservation_id 필요')
             return
+        cookie = self.headers.get('X-Daou-Session')
         try:
-            sess = _login()
+            sess = _get_session(cookie)
             _delete(sess, int(rid))
             self._ok({'ok': True})
         except Exception as e:

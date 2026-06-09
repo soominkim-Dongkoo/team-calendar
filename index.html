@@ -995,6 +995,17 @@
     .avatar-menu-team { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
     .avatar-menu-btn { width: 100%; border: none; background: none; text-align: left; padding: 8px 10px; border-radius: 6px; font-size: 13px; color: #e53e3e; font-weight: 600; font-family: inherit; cursor: pointer; }
     .avatar-menu-btn:hover { background: #fff5f5; }
+
+    .daou-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 400;
+      align-items: center;
+      justify-content: center;
+    }
+    .daou-overlay.open { display: flex; }
   </style>
 </head>
 <body>
@@ -1322,6 +1333,54 @@
   const RESERVE_BASE = (location.hostname === '' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')
     ? 'http://localhost:8765'
     : '';
+
+  // ── 다우오피스 세션 관리 ─────────────────────────────────
+  let _daouSession = localStorage.getItem('daouSession') || null;
+  let _daouPendingCb = null;
+
+  function _daouHeaders() {
+    return _daouSession ? { 'X-Daou-Session': _daouSession } : {};
+  }
+
+  function showDaouLogin(cb) {
+    _daouPendingCb = cb || null;
+    document.getElementById('daou-error').textContent = '';
+    document.getElementById('daou-id').value = '';
+    document.getElementById('daou-pw').value = '';
+    document.getElementById('daou-overlay').classList.add('open');
+    setTimeout(() => document.getElementById('daou-id').focus(), 50);
+  }
+
+  async function submitDaouLogin() {
+    const id = document.getElementById('daou-id').value.trim();
+    const pw = document.getElementById('daou-pw').value;
+    const errEl = document.getElementById('daou-error');
+    const btn = document.getElementById('daou-login-btn');
+    if (!id || !pw) { errEl.textContent = '아이디와 비밀번호를 입력하세요.'; return; }
+    btn.disabled = true; btn.textContent = '로그인 중...';
+    try {
+      const res = await fetch(`${RESERVE_BASE}/api/daou_login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: id, password: pw }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.ok) {
+        errEl.textContent = json.error || '로그인 실패';
+        btn.disabled = false; btn.textContent = '로그인';
+        return;
+      }
+      _daouSession = json.session;
+      localStorage.setItem('daouSession', _daouSession);
+      document.getElementById('daou-overlay').classList.remove('open');
+      btn.disabled = false; btn.textContent = '로그인';
+      if (_daouPendingCb) { const cb = _daouPendingCb; _daouPendingCb = null; cb(); }
+    } catch {
+      errEl.textContent = '서버 연결 실패';
+      btn.disabled = false; btn.textContent = '로그인';
+    }
+  }
+  // ──────────────────────────────────────────────────────────
 
   const teamChipMap     = ['chip-company', 'chip-meeting', 'chip-vacation'];
   const personalChipMap = ['chip-work', 'chip-personal', 'chip-vacation'];
@@ -1971,7 +2030,7 @@
         try {
           await fetch(`${RESERVE_BASE}/api/reserve`, {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ..._daouHeaders() },
             body: JSON.stringify({ reservation_id: resvId }),
           });
         } catch (ex) {
@@ -2031,7 +2090,7 @@
 
     try {
       const url = `${RESERVE_BASE}/api/availability?date=${date}&room=${encodeURIComponent(room)}`;
-      const res = await fetch(url);
+      const res = await fetch(url, { headers: _daouHeaders() });
       const json = await res.json();
       const list = json.data || [];
 
@@ -2278,22 +2337,27 @@
     // 회의실 선택 시: 다우오피스 예약 먼저 → 실패하면 저장 중단
     let daouResvId = null;
     if (room && st && et) {
+      if (!_daouSession) { showDaouLogin(() => saveEvent()); return; }
       const prevResvId = _editingId ? (_detailRecord?.daou_reservation_id ?? null) : null;
       const method = prevResvId ? 'PUT' : 'POST';
       setBusy(true);
       try {
         const resp = await fetch(`${RESERVE_BASE}/api/reserve`, {
           method,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ..._daouHeaders() },
           body: JSON.stringify({
             room, title,
             start: `${start}T${st}:00`,
             end: `${end}T${et}:00`,
-            userId: currentUser?.user_id,
             ...(prevResvId ? { reservation_id: prevResvId } : {}),
           }),
         });
         const result = await resp.json().catch(() => ({}));
+        if (resp.status === 401) {
+          setBusy(false);
+          _daouSession = null; localStorage.removeItem('daouSession');
+          showDaouLogin(() => saveEvent()); return;
+        }
         if (!resp.ok) {
           setBusy(false);
           errEl.textContent = result.error || '그룹웨어 회의실 예약 실패';
@@ -2302,7 +2366,7 @@
         daouResvId = result.reservation_id ?? null;
       } catch (ex) {
         setBusy(false);
-        errEl.textContent = '그룹웨어 예약 서버에 연결할 수 없습니다 (server.py 실행 필요)';
+        errEl.textContent = '그룹웨어 예약 서버에 연결할 수 없습니다';
         return;
       }
     }
@@ -2337,6 +2401,9 @@
   ['login-id', 'login-pw'].forEach(id =>
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); })
   );
+  ['daou-id', 'daou-pw'].forEach(id =>
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') submitDaouLogin(); })
+  );
 
   updateAvatar();
   if (!currentUser) {
@@ -2345,6 +2412,26 @@
     loadAndRender(curYear, curMonth);
   }
 </script>
+
+<!-- 다우오피스 로그인 모달 -->
+<div class="daou-overlay" id="daou-overlay">
+  <div class="login-box">
+    <div class="login-logo">
+      <p style="font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">다우오피스 연동</p>
+      <p>회의실 예약 기능을 사용하려면 로그인하세요</p>
+    </div>
+    <div class="form-group">
+      <label>아이디</label>
+      <input type="text" id="daou-id" placeholder="다우오피스 아이디" autocomplete="username" />
+    </div>
+    <div class="form-group">
+      <label>비밀번호</label>
+      <input type="password" id="daou-pw" placeholder="비밀번호" autocomplete="current-password" />
+    </div>
+    <div class="login-error" id="daou-error"></div>
+    <button class="btn-login" id="daou-login-btn" onclick="submitDaouLogin()">로그인</button>
+  </div>
+</div>
 
 </body>
 </html>
