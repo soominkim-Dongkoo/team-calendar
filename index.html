@@ -1056,9 +1056,10 @@
       .btn-simulate-mobile { display:none !important; }
       #darkToggle { display:none !important; }
       .desktop-add-btn { display:none !important; }
-      /* 헤더: 한 줄 (로고 + team/my + 우측) */
-      header { padding:0 10px; height:auto; min-height:50px; }
+      /* 헤더: 한 줄, view-toggle 가로 중앙 */
+      header { padding:0 10px; height:50px; }
       .header-right { gap:6px; margin-left:auto; }
+      .view-toggle { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
       .logo img { height:20px; }
       .logo-team { font-size:12px; }
       .logo-sub { display:block; }
@@ -1066,7 +1067,15 @@
       .cal-header-row .legend { display:none !important; }
       .cal-add-btn { display:inline-flex !important; padding:6px 12px; font-size:12px; }
       /* btn-view-mode → 헤더에 표시 */
-      .btn-view-mode { display:inline-flex !important; align-items:center; gap:4px; }
+      .btn-view-mode { display:inline-flex !important; align-items:center; gap:3px; font-size:11px; }
+      /* cal-nav 화살표 간격 */
+      .cal-nav { gap:4px; }
+      .cal-nav h2 { font-size:18px; width:auto; min-width:110px; }
+      /* 모바일 그리드 셀 */
+      .day-cell { min-height:0; padding:3px; overflow:hidden; }
+      .event-chip { height:18px; font-size:10px; padding:0 4px; }
+      .day-num { width:20px; height:20px; font-size:11px; }
+      .month-grid { min-height:0; }
     }
     /* ── 모바일 시뮬레이트 (데스크톱에서 미리보기) ── */
     body.simulate-mobile {
@@ -1084,14 +1093,21 @@
     body.simulate-mobile .btn-simulate-mobile { display:none !important; }
     body.simulate-mobile #darkToggle { display:none !important; }
     body.simulate-mobile .desktop-add-btn { display:none !important; }
-    body.simulate-mobile header { padding:0 10px; height:auto; min-height:50px; }
+    body.simulate-mobile header { padding:0 10px; height:50px; }
     body.simulate-mobile .header-right { gap:6px; margin-left:auto; }
+    body.simulate-mobile .view-toggle { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
     body.simulate-mobile .logo img { height:20px; }
     body.simulate-mobile .logo-team { font-size:12px; }
     body.simulate-mobile .logo-sub { display:block; }
     body.simulate-mobile .cal-header-row .legend { display:none !important; }
     body.simulate-mobile .cal-add-btn { display:inline-flex !important; padding:6px 12px; font-size:12px; }
-    body.simulate-mobile .btn-view-mode { display:inline-flex !important; align-items:center; gap:4px; }
+    body.simulate-mobile .btn-view-mode { display:inline-flex !important; align-items:center; gap:3px; font-size:11px; }
+    body.simulate-mobile .cal-nav { gap:4px; }
+    body.simulate-mobile .cal-nav h2 { font-size:18px; width:auto; min-width:110px; }
+    body.simulate-mobile .day-cell { min-height:0; padding:3px; overflow:hidden; }
+    body.simulate-mobile .event-chip { height:18px; font-size:10px; padding:0 4px; }
+    body.simulate-mobile .day-num { width:20px; height:20px; font-size:11px; }
+    body.simulate-mobile .month-grid { min-height:0; }
 
     .daou-overlay {
       display: none;
@@ -1122,7 +1138,7 @@
     <button onclick="setView('personal', this)">My</button>
   </div>
   <div class="header-right">
-    <button class="btn-view-mode" id="btn-view-mode" onclick="toggleMobileView()">달력</button>
+    <button class="btn-view-mode" id="btn-view-mode" onclick="toggleMobileView()">⊞ 그리드</button>
     <button class="btn-dark btn-simulate-mobile" id="btn-simulate-mobile" onclick="toggleSimulateMobile()" title="모바일 레이아웃 미리보기">📱 모바일</button>
     <button class="btn-dark" id="darkToggle" onclick="toggleDark()" title="다크모드 전환">🌙</button>
     <button class="btn-add desktop-add-btn" onclick="openModal()">+ 일정 추가</button>
@@ -1745,7 +1761,7 @@
     _mobileGrid = false;
     document.body.classList.toggle('simulate-mobile', _forceMobile);
     document.getElementById('btn-simulate-mobile').textContent = _forceMobile ? '🖥 데스크톱' : '📱 모바일';
-    document.getElementById('btn-view-mode').textContent = '달력';
+    document.getElementById('btn-view-mode').textContent = '⊞ 그리드';
     loadAndRender(curYear, curMonth);
     if (!_forceMobile) openDayView(_selectedDayStr || `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`);
   }
@@ -1818,6 +1834,12 @@
       ? document.getElementById('legend-team')
       : document.getElementById('legend-personal');
     row.innerHTML = src ? src.innerHTML : '';
+    // innerHTML 복사는 HTML 속성(초기값)만 복사 → 현재 상태를 localStorage에서 동기화
+    const state = loadState();
+    const stateArr = currentView === 'team' ? state.team : state.personal;
+    row.querySelectorAll('input[type="checkbox"]').forEach((cb, i) => {
+      if (i < stateArr.length) cb.checked = stateArr[i];
+    });
   }
 
   function toggleMobileDateDropdown() {
@@ -2358,11 +2380,11 @@
     const grid = document.getElementById('month-grid');
     const mds  = document.getElementById('mobile-day-section');
     if (_mobileGrid) {
-      btn.textContent = '달력';
+      btn.textContent = '☰ 목록';
       grid.style.display = '';
       mds.style.display = 'none';
     } else {
-      btn.textContent = '달력';
+      btn.textContent = '⊞ 그리드';
       grid.style.display = 'none';
       mds.style.display = '';
       openDayView(_selectedDayStr || `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`);
