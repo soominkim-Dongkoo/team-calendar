@@ -87,7 +87,8 @@
     .logo img { height: 28px; }
     .logo-text { display: flex; flex-direction: column; line-height: 1.25; }
     .logo-team { font-size: 16px; font-weight: 700; color: #4361ee; }
-    .logo-sub { display: none; font-size: 11px; font-weight: 500; color: var(--text-muted); letter-spacing: -0.2px; }
+    .logo-sub { display: none; font-size: 11px; font-weight: 600; color: #4361ee; letter-spacing: -0.2px; }
+    .cal-header-right { margin-left: auto; display:flex; align-items:center; }
 
     .view-toggle {
       display: flex;
@@ -1034,12 +1035,13 @@
     .desktop-add-btn { }
     #mobile-day-section { padding-top: 0; }
     #mobile-day-section .day-view { display: flex; flex-direction: column; gap: 10px; }
-    .mobile-legend-row { display:flex; flex-wrap:wrap; gap:10px; padding:8px 0 6px; border-bottom:1px solid var(--border); margin-bottom:4px; }
+    .mobile-legend-row { display:flex; flex-wrap:wrap; gap:10px; padding:8px 0 6px; border-bottom:1px solid var(--border); margin-bottom:4px; justify-content:center; }
     .mobile-legend-row .legend-item { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-secondary); cursor:pointer; }
     .mobile-legend-row .legend-item input { width:13px; height:13px; accent-color:#4361ee; cursor:pointer; }
     .mobile-legend-row .legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-    .mobile-date-nav { position:relative; padding:4px 0 8px; }
+    .mobile-date-nav { position:relative; padding:4px 0 8px; display:flex; justify-content:center; }
     .mobile-date-btn { display:flex; align-items:center; gap:5px; background:none; border:none; font-family:inherit; font-size:16px; font-weight:700; color:var(--text-primary); cursor:pointer; padding:4px 0; }
+    #mobile-day-content .day-view-title { display:none; }
     .mobile-date-arrow { font-size:9px; color:var(--text-muted); }
     .mobile-date-dropdown { position:absolute; top:100%; left:0; right:0; background:var(--surface); border:1px solid var(--border); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.12); max-height:220px; overflow-y:auto; z-index:200; }
     .mobile-date-item { display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-bottom:1px solid var(--border); cursor:pointer; font-family:inherit; font-size:13px; color:var(--text-primary); }
@@ -1054,11 +1056,9 @@
       .btn-simulate-mobile { display:none !important; }
       #darkToggle { display:none !important; }
       .desktop-add-btn { display:none !important; }
-      /* 헤더: 2줄 (로고+우측) + (team/my 중앙) */
-      header { flex-wrap:wrap; height:auto; padding:6px 12px 0; gap:0; align-items:center; }
-      .logo { flex:1 0 auto; order:1; }
-      .header-right { flex:0 0 auto; order:2; gap:6px; margin-left:0; }
-      .view-toggle { flex:0 0 100%; order:3; justify-content:center; padding:4px 0 6px; }
+      /* 헤더: 한 줄 (로고 + team/my + 우측) */
+      header { padding:0 10px; height:auto; min-height:50px; }
+      .header-right { gap:6px; margin-left:auto; }
       .logo img { height:20px; }
       .logo-team { font-size:12px; }
       .logo-sub { display:block; }
@@ -1084,10 +1084,8 @@
     body.simulate-mobile .btn-simulate-mobile { display:none !important; }
     body.simulate-mobile #darkToggle { display:none !important; }
     body.simulate-mobile .desktop-add-btn { display:none !important; }
-    body.simulate-mobile header { flex-wrap:wrap; height:auto; padding:6px 12px 0; gap:0; align-items:center; }
-    body.simulate-mobile .logo { flex:1 0 auto; order:1; }
-    body.simulate-mobile .header-right { flex:0 0 auto; order:2; gap:6px; margin-left:0; }
-    body.simulate-mobile .view-toggle { flex:0 0 100%; order:3; justify-content:center; padding:4px 0 6px; }
+    body.simulate-mobile header { padding:0 10px; height:auto; min-height:50px; }
+    body.simulate-mobile .header-right { gap:6px; margin-left:auto; }
     body.simulate-mobile .logo img { height:20px; }
     body.simulate-mobile .logo-team { font-size:12px; }
     body.simulate-mobile .logo-sub { display:block; }
@@ -1116,7 +1114,7 @@
     <img src="dongkoo-logo_2.svg" alt="동국바이오제약">
     <div class="logo-text">
       <span class="logo-team">경영기획팀</span>
-      <span class="logo-sub">캘린더</span>
+      <span class="logo-sub">Calendar</span>
     </div>
   </div>
   <div class="view-toggle">
@@ -1216,7 +1214,7 @@
         <h2 id="cal-title">로딩 중...</h2>
         <button onclick="moveMonth(1)">›</button>
       </div>
-      <div style="width:140px;display:flex;justify-content:flex-end;align-items:center;">
+      <div class="cal-header-right">
         <button class="btn-add cal-add-btn" onclick="openModal()">+ 일정 추가</button>
       </div>
     </div>
@@ -2134,6 +2132,10 @@
         evEl.appendChild(descEl);
       }
 
+      const evKey = String(ev.r.id || ev.r.doc_id || '') + '|' + (ev.r.start_time || '') + '|' + (ev.r.start_date || '');
+      evEl.dataset.evKey = evKey;
+      if (!window._dayEvMap) window._dayEvMap = {};
+      window._dayEvMap[evKey] = ev.r;
       evEl.addEventListener('click', e => { e.stopPropagation(); openDetail(ev.r, evEl, true); });
       tlEl.appendChild(evEl);
     });
@@ -2160,7 +2162,14 @@
       const dateLabel = document.getElementById('mobile-date-label');
       if (dateLabel) dateLabel.textContent = label;
       const content = document.getElementById('mobile-day-content');
-      if (content) content.innerHTML = document.getElementById('day-view').innerHTML;
+      if (content) {
+        content.innerHTML = document.getElementById('day-view').innerHTML;
+        // addEventListener는 innerHTML 복사 시 손실 → data-ev-key로 재연결
+        content.querySelectorAll('.timeline-event[data-ev-key]').forEach(el => {
+          const r = window._dayEvMap?.[el.dataset.evKey];
+          if (r) el.addEventListener('click', e => { e.stopPropagation(); openDetail(r, el, true); });
+        });
+      }
       updateMobileLegend();
       const dd = document.getElementById('mobile-date-dropdown');
       if (dd) dd.style.display = 'none';
