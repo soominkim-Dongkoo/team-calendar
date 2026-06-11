@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    html { scrollbar-gutter: stable; }
     :root {
       --bg: #f5f6fa;
       --surface: #ffffff;
@@ -334,6 +335,7 @@
     /* ───── 메인 캘린더 ───── */
     .calendar-area {
       flex: 1;
+      min-height: 0;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -389,8 +391,9 @@
     /* 월간 그리드 */
     .month-grid {
       flex: 1;
-      display: flex;
-      flex-direction: column;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
       background: var(--surface);
       border-radius: 12px;
       border: 1px solid var(--border);
@@ -418,21 +421,21 @@
 
     .days-grid {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      grid-template-rows: repeat(6, 1fr);
-      flex: 1;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      grid-template-rows: repeat(6, minmax(146px, 1fr));
     }
 
     .day-cell {
       border-right: 1px solid var(--border-light);
       border-bottom: 1px solid var(--border-light);
       padding: 8px;
-      min-height: 100px;
+      min-height: 0;
       cursor: pointer;
       transition: background 0.1s;
       display: flex;
       flex-direction: column;
       gap: 3px;
+      position: relative;
     }
 
     .day-cell:hover { background: var(--hover); }
@@ -1039,10 +1042,11 @@
     #mobile-day-section .day-view { display: flex; flex-direction: column; gap: 10px; }
     .mobile-legend-row { display:flex; flex-wrap:wrap; gap:10px; padding:8px 0 6px; border-bottom:1px solid var(--border); margin-bottom:4px; justify-content:center; }
     .mobile-legend-row .legend-item { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-secondary); cursor:pointer; }
-    .mobile-legend-row .legend-item input { width:13px; height:13px; accent-color:#4361ee; cursor:pointer; }
+    .mobile-legend-row .legend-item input { appearance:none; -webkit-appearance:none; display:block; width:13px; height:13px; border:1.5px solid #cbd5e0; border-radius:3px; background-color:#fff; background-repeat:no-repeat; background-position:50% 50%; background-size:0; cursor:pointer; flex-shrink:0; }
+    .mobile-legend-row .legend-item input:checked { border-color:#4a5568; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 10 10' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='1.5,5 4,7.5 8.5,2.5' fill='none' stroke='%234a5568' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-size:70% 70%; }
     .mobile-legend-row .legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-    .mobile-date-nav { position:relative; padding:4px 0 8px; display:flex; justify-content:center; }
-    .mobile-date-btn { display:flex; align-items:center; gap:5px; background:none; border:none; font-family:inherit; font-size:16px; font-weight:700; color:var(--text-primary); cursor:pointer; padding:4px 0; }
+    .mobile-date-nav { position:relative; padding:4px 0 8px; display:block; text-align:center; width:100%; }
+    .mobile-date-btn { display:inline-flex; align-items:center; gap:5px; background:none; border:none; font-family:inherit; font-size:16px; font-weight:700; color:var(--text-primary); cursor:pointer; padding:4px 0; }
     #mobile-day-content .day-view-title { display:none; }
     .mobile-date-arrow { font-size:9px; color:var(--text-muted); }
     .mobile-date-dropdown { position:absolute; top:100%; left:0; right:0; background:var(--surface); border:1px solid var(--border); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.12); max-height:220px; overflow-y:auto; z-index:200; }
@@ -1074,12 +1078,29 @@
       /* cal-nav 화살표 간격 */
       .cal-nav { gap:4px; }
       .cal-nav h2 { font-size:18px; width:auto; min-width:110px; }
-      /* 모바일 그리드 셀: 웹과 동일한 flex:1 체인, 칩 크기만 다름 */
+      /* 모바일 그리드: 셀 고정 크기 */
       .day-cell { min-height:0; padding:3px; overflow:hidden; }
-      .chips-wrap.clipped { max-height:60px; }
-      .chip-more { font-size:9px; padding:0 2px; white-space:nowrap; }
+      .chips-wrap.clipped { max-height:68px; transition:max-height 0.4s ease-in-out; }
+      .chip-more { font-size:9px; line-height:1.2; padding:0 2px; white-space:nowrap; touch-action:manipulation; }
       .event-chip { height:18px; font-size:10px; padding:0 4px; }
       .day-num { width:20px; height:20px; font-size:11px; }
+      /* 모달 sticky 헤더 */
+      .modal {
+        width: calc(100vw - 24px);
+        max-height: calc(100svh - 60px);
+        overflow-y: scroll;
+        -webkit-overflow-scrolling: touch;
+        padding: 0 20px 20px;
+      }
+      .modal h3 {
+        position: sticky;
+        top: 0;
+        background: var(--surface);
+        z-index: 1;
+        margin: 0 -20px 20px;
+        padding: 20px 20px 16px;
+        border-bottom: 1px solid var(--border);
+      }
     }
     /* ── 모바일 시뮬레이트 (데스크톱에서 미리보기) ── */
     body.simulate-mobile {
@@ -1088,7 +1109,7 @@
       align-items:center;
     }
     body.simulate-mobile #app-shell {
-      width:390px; max-width:390px; min-height:100vh;
+      width:390px; max-width:390px; height:100vh; overflow-y:auto;
       background:var(--bg); overflow-x:hidden;
       box-shadow:0 0 40px rgba(0,0,0,0.5);
     }
@@ -1109,10 +1130,12 @@
     body.simulate-mobile .cal-nav { gap:4px; }
     body.simulate-mobile .cal-nav h2 { font-size:18px; width:auto; min-width:110px; }
     body.simulate-mobile .day-cell { min-height:0; padding:3px; overflow:hidden; }
-    body.simulate-mobile .chips-wrap.clipped { max-height:60px; }
-    body.simulate-mobile .chip-more { font-size:9px; padding:0 2px; white-space:nowrap; }
+    body.simulate-mobile .chips-wrap.clipped { max-height:68px; transition:max-height 0.4s ease-in-out; }
+    body.simulate-mobile .chip-more { font-size:9px; line-height:1.2; padding:0 2px; white-space:nowrap; touch-action:manipulation; }
     body.simulate-mobile .event-chip { height:18px; font-size:10px; padding:0 4px; }
     body.simulate-mobile .day-num { width:20px; height:20px; font-size:11px; }
+    body.simulate-mobile .modal { width:calc(390px - 24px); max-height:calc(100svh - 60px); overflow-y:auto; padding:0 20px 20px; }
+    body.simulate-mobile .modal h3 { position:sticky; top:0; background:var(--surface); z-index:1; margin:0 -20px 20px; padding:20px 20px 16px; border-bottom:1px solid var(--border); }
 
     /* ── iOS 탭 하이라이트 제거 (파란 잔상 방지) ── */
     * { -webkit-tap-highlight-color: transparent; }
@@ -1305,6 +1328,31 @@
   <div class="detail-row"><span class="detail-key">시간</span><span class="detail-val" id="detail-time"></span></div>
   <div class="detail-row" id="detail-room-row"><span class="detail-key">회의실</span><span class="detail-val" id="detail-room"></span></div>
   <div class="detail-row" id="detail-url-row"><span class="detail-key">URL</span><span class="detail-val"><a id="detail-url" href="#" target="_blank" style="color:#4361ee;text-decoration:none;">기안 열기 →</a></span></div>
+  <div class="detail-row" id="detail-reminder-row" style="display:none;">
+    <span class="detail-key">알림</span>
+    <span class="detail-val" style="display:flex;flex-direction:column;gap:6px;">
+      <label class="toggle-switch" style="margin-bottom:0;">
+        <input type="checkbox" id="detail-reminder-on" onchange="onDetailReminderToggle()" />
+        <span class="toggle-slider"></span>
+      </label>
+      <div id="detail-reminder-inputs" style="display:none;flex-wrap:wrap;gap:4px;align-items:center;">
+        <input type="date" id="detail-reminder-date" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);" />
+        <select id="detail-reminder-hour" style="font-size:12px;padding:3px 4px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);">
+          <option value="0">0시</option><option value="1">1시</option><option value="2">2시</option><option value="3">3시</option><option value="4">4시</option><option value="5">5시</option><option value="6">6시</option><option value="7">7시</option><option value="8">8시</option><option value="9">9시</option><option value="10">10시</option><option value="11">11시</option><option value="12">12시</option><option value="13">13시</option><option value="14">14시</option><option value="15">15시</option><option value="16">16시</option><option value="17">17시</option><option value="18">18시</option><option value="19">19시</option><option value="20">20시</option><option value="21">21시</option><option value="22">22시</option><option value="23">23시</option>
+        </select>
+        <select id="detail-reminder-min" style="font-size:12px;padding:3px 4px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);">
+          <option value="00">00</option><option value="05">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
+        </select>
+        <button onclick="saveDetailReminder()" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-hover);color:var(--text-secondary);cursor:pointer;">저장</button>
+      </div>
+    </span>
+  </div>
+  <div class="detail-row" id="detail-add-my-row" style="display:none;">
+    <span class="detail-key"></span>
+    <span class="detail-val">
+      <button id="detail-add-my-btn" onclick="addToMyCalendar()" class="detail-action-btn" style="background:#4361ee;color:#fff;border-color:#4361ee;">내 일정에 추가</button>
+    </span>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1665,7 +1713,10 @@
     const prevDays   = new Date(year, month, 0).getDate();
 
     const totalRows = Math.ceil((firstDow + daysInMonth) / 7);
-    grid.style.gridTemplateRows = `repeat(${totalRows}, 1fr)`;
+    const mobile = isMobile();
+    grid.style.gridTemplateRows = mobile
+      ? `repeat(${totalRows}, minmax(112px, auto))`
+      : `repeat(${totalRows}, minmax(146px, 1fr))`;
 
     for (let i = 0; i < totalRows * 7; i++) {
       const cell = document.createElement('div');
@@ -1741,7 +1792,7 @@
 
       if (sorted.length > 3) {
         const hiddenCount = sorted.length - 3;
-        const chipH = isMobile() ? 18 : 22;
+        const chipH = mobile ? 18 : 22;
         const expandedH = sorted.length * chipH + (sorted.length - 1) * 3;
         chipsWrap.classList.add('clipped');
         const more = document.createElement('div');
@@ -1752,6 +1803,10 @@
           e.stopPropagation();
           expanded = !expanded;
           chipsWrap.style.maxHeight = expanded ? expandedH + 'px' : '';
+          if (!mobile) {
+            cell.style.zIndex   = expanded ? '10' : '';
+            cell.style.overflow = expanded ? 'visible' : '';
+          }
           more.textContent = expanded ? '접기 ▲' : `+${hiddenCount} more ▼`;
         });
         cell.appendChild(more);
@@ -1841,6 +1896,7 @@
       const dayName = DAYS[new Date(year, month, d).getDay()];
       const item = document.createElement('button');
       item.className = 'mobile-date-item' + (ds === selected ? ' selected' : '');
+      item.dataset.date = ds;
       item.innerHTML = `${month+1}월 ${d}일 (${dayName})` + (ds === todayStr ? ' <span class="today-badge">Today</span>' : '');
       item.onclick = () => {
         _selectedDayStr = ds;
@@ -1859,6 +1915,7 @@
       ? document.getElementById('legend-team')
       : document.getElementById('legend-personal');
     row.innerHTML = src ? src.innerHTML : '';
+    if (!_mobileGrid) row.querySelectorAll('label').forEach(l => { if (l.textContent.includes('휴가')) l.remove(); });
     // innerHTML 복사는 HTML 속성(초기값)만 복사 → 현재 상태를 localStorage에서 동기화
     const state = loadState();
     const stateArr = currentView === 'team' ? state.team : state.personal;
@@ -2023,6 +2080,11 @@
 
   function openDayView(dateStr) {
     _selectedDayStr = dateStr;
+
+    // 드롭박스 selected 동기화
+    document.querySelectorAll('#mobile-date-dropdown .mobile-date-item').forEach(el => {
+      el.classList.toggle('selected', el.dataset.date === dateStr);
+    });
 
     // 미니캘린더 selected 표시
     document.querySelectorAll('.mini-grid .day').forEach(d =>
@@ -2250,9 +2312,36 @@
     _detailRecord = r;
     _detailAnchor = anchor;
     const popup = document.getElementById('detail-popup');
+    const isCompany = r._source === 'event' && r.event_type === 'company';
+    const isMyCompanyCopy = isCompany && !r.is_team;
     const isEditable = !readOnly && r._source === 'event' && r.event_type !== 'company';
     document.getElementById('detail-edit-btn').style.display = isEditable ? 'inline-flex' : 'none';
-    document.getElementById('detail-delete-btn').style.display = isEditable ? 'inline-flex' : 'none';
+    document.getElementById('detail-delete-btn').style.display = (isEditable || isMyCompanyCopy) ? 'inline-flex' : 'none';
+
+    // 알림 설정 (전사 회의에서만)
+    const reminderRow = document.getElementById('detail-reminder-row');
+    reminderRow.style.display = isCompany ? '' : 'none';
+    if (isCompany) {
+      const on = !!r.reminder_at;
+      document.getElementById('detail-reminder-on').checked = on;
+      const inp = document.getElementById('detail-reminder-inputs');
+      inp.style.display = on ? 'flex' : 'none';
+      if (r.reminder_at) {
+        const dt = new Date(r.reminder_at);
+        document.getElementById('detail-reminder-date').value = r.reminder_at.slice(0, 10);
+        document.getElementById('detail-reminder-hour').value = String(dt.getHours());
+        document.getElementById('detail-reminder-min').value = String(Math.round(dt.getMinutes() / 5) * 5 % 60).padStart(2, '0');
+      } else {
+        document.getElementById('detail-reminder-date').value = r.start_date || '';
+        document.getElementById('detail-reminder-hour').value = '9';
+        document.getElementById('detail-reminder-min').value = '00';
+      }
+    }
+
+    // 내 일정에 추가 버튼 (팀 뷰 전사 회의에서만, My 복사본에서는 숨김)
+    document.getElementById('detail-add-my-row').style.display =
+      (isCompany && r.is_team && currentView === 'team') ? '' : 'none';
+
     const periodText = r.start_date === r.end_date
       ? r.start_date
       : `${r.start_date} ~ ${r.end_date}`;
@@ -2304,6 +2393,54 @@
     document.getElementById('detail-popup').classList.remove('open');
     _detailRecord = null;
     _detailAnchor = null;
+  }
+
+  function onDetailReminderToggle() {
+    const on = document.getElementById('detail-reminder-on').checked;
+    document.getElementById('detail-reminder-inputs').style.display = on ? 'flex' : 'none';
+  }
+
+  async function saveDetailReminder() {
+    if (!_detailRecord || _detailRecord._source !== 'event') return;
+    const on = document.getElementById('detail-reminder-on').checked;
+    let reminder_at = null;
+    if (on) {
+      const date = document.getElementById('detail-reminder-date').value;
+      if (!date) { showToast('알림 날짜를 선택해주세요.'); return; }
+      const h = String(document.getElementById('detail-reminder-hour').value).padStart(2, '0');
+      const m = document.getElementById('detail-reminder-min').value;
+      reminder_at = `${date}T${h}:${m}:00`;
+    }
+    try {
+      await sb.from('manual_events').update({ reminder_at }).eq('id', _detailRecord.id);
+      _detailRecord.reminder_at = reminder_at;
+      await loadAndRender(curYear, curMonth);
+      showToast(on ? '알림이 설정됐습니다.' : '알림이 해제됐습니다.');
+    } catch {
+      showToast('저장에 실패했습니다.');
+    }
+  }
+
+  async function addToMyCalendar() {
+    if (!_detailRecord || !currentUser) return;
+    const r = _detailRecord;
+    try {
+      await sb.from('manual_events').insert({
+        title: r.title,
+        event_type: 'company',
+        owner: currentUser.user_id,
+        start_date: r.start_date,
+        end_date: r.end_date,
+        start_time: r.start_time || null,
+        end_time: r.end_time || null,
+        is_team: false,
+      });
+      closeDetail();
+      await loadAndRender(curYear, curMonth);
+      showToast('내 일정에 추가됐습니다.');
+    } catch {
+      showToast('추가에 실패했습니다.');
+    }
   }
 
   function deleteEvent() {
@@ -2423,7 +2560,7 @@
       grid.style.display = 'none';
       mds.style.display = '';
       if (legend) { legend.style.display = ''; updateMobileLegend(); }
-      openDayView(_selectedDayStr || `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`);
+      openDayView(`${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`);
     }
   }
 
@@ -2588,7 +2725,10 @@
     document.getElementById('ev-desc').value = '';
     document.getElementById('ev-error').textContent = '';
     toggleRoomField();
-    document.getElementById('modal').classList.add('open');
+    const overlay = document.getElementById('modal');
+    overlay.classList.add('open');
+    const inner = overlay.querySelector('.modal');
+    if (inner) { void inner.offsetHeight; inner.scrollTop = 0; }
   }
 
   function openEditModal(r) {
@@ -2607,7 +2747,10 @@
     document.getElementById('ev-desc').value = r.description || '';
     document.getElementById('ev-error').textContent = '';
     toggleRoomField();
-    document.getElementById('modal').classList.add('open');
+    const overlay2 = document.getElementById('modal');
+    overlay2.classList.add('open');
+    const inner2 = overlay2.querySelector('.modal');
+    if (inner2) { void inner2.offsetHeight; inner2.scrollTop = 0; }
   }
 
   function closeModal(saved = false) {
