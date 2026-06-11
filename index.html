@@ -1048,11 +1048,12 @@
     .mobile-legend-row .legend-item input { appearance:none; -webkit-appearance:none; display:block; width:13px; height:13px; border:1.5px solid #cbd5e0; border-radius:3px; background-color:#fff; background-repeat:no-repeat; background-position:50% 50%; background-size:0; cursor:pointer; flex-shrink:0; }
     .mobile-legend-row .legend-item input:checked { border-color:#4a5568; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 10 10' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='1.5,5 4,7.5 8.5,2.5' fill='none' stroke='%234a5568' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-size:70% 70%; }
     .mobile-legend-row .legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-    .mobile-date-nav { position:relative; padding:4px 0 8px; display:block; text-align:center; width:100%; }
+    .mobile-date-nav { position:static; padding:4px 0 8px; display:block; text-align:center; width:100%; }
     .mobile-date-btn { display:inline-flex; align-items:center; gap:5px; background:none; border:none; font-family:inherit; font-size:16px; font-weight:700; color:var(--text-primary); cursor:pointer; padding:4px 0; }
     #mobile-day-content .day-view-title { display:none; }
     .mobile-date-arrow { font-size:9px; color:var(--text-muted); }
-    .mobile-date-dropdown { position:absolute; top:100%; left:0; right:0; background:var(--surface); border:1px solid var(--border); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.12); max-height:220px; overflow-y:auto; z-index:200; }
+    #mobile-day-section { position:relative; }
+    .mobile-date-dropdown { position:absolute; top:auto; left:0; right:0; background:var(--surface); border:1px solid var(--border); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.12); max-height:220px; overflow-y:auto; z-index:200; }
     .mobile-date-item { display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-bottom:1px solid var(--border); cursor:pointer; font-family:inherit; font-size:13px; color:var(--text-primary); }
     .mobile-date-item:last-child { border-bottom:none; }
     .mobile-date-item:hover { background:var(--hover); }
@@ -1933,9 +1934,16 @@
 
   function toggleMobileDateDropdown() {
     const dd = document.getElementById('mobile-date-dropdown');
+    const btn = document.getElementById('mobile-date-btn');
     const arrow = document.querySelector('.mobile-date-arrow');
     if (!dd) return;
     const open = dd.style.display === 'none';
+    if (open) {
+      // 버튼 하단에 위치 고정
+      const btnRect = btn.getBoundingClientRect();
+      const secRect = document.getElementById('mobile-day-section').getBoundingClientRect();
+      dd.style.top = (btnRect.bottom - secRect.top) + 'px';
+    }
     dd.style.display = open ? '' : 'none';
     if (arrow) arrow.textContent = open ? '▲' : '▼';
     if (open) {
@@ -1954,11 +1962,16 @@
     if (newMonth > 11) { newMonth = 0;  newYear++; }
     if (newMonth < 0)  { newMonth = 11; newYear--; }
     if (newYear < 2026) return;
-    // 모바일: 이전 달 → 마지막날, 다음 달 → 첫째날
+    // 모바일: 현재 달 → Today, 이전 달 → 마지막날, 다음 달 → 첫째날
     if (_selectedDayStr) {
-      const lastDay = new Date(newYear, newMonth + 1, 0).getDate();
-      const newDay = delta < 0 ? lastDay : 1;
-      _selectedDayStr = `${newYear}-${pad(newMonth+1)}-${pad(newDay)}`;
+      const isCurrentMonth = newYear === today.getFullYear() && newMonth === today.getMonth();
+      if (isCurrentMonth) {
+        _selectedDayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+      } else {
+        const lastDay = new Date(newYear, newMonth + 1, 0).getDate();
+        const newDay = delta < 0 ? lastDay : 1;
+        _selectedDayStr = `${newYear}-${pad(newMonth+1)}-${pad(newDay)}`;
+      }
     }
     curMonth = newMonth;
     curYear  = newYear;
