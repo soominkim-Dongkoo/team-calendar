@@ -2968,7 +2968,7 @@
     if (!date) return null;
     const h = String(document.getElementById('ev-reminder-hour').value).padStart(2, '0');
     const m = document.getElementById('ev-reminder-min').value;
-    return `${date}T${h}:${m}:00`;
+    return new Date(`${date}T${h}:${m}:00`).toISOString();
   }
 
   function setReminderFields(isoStr) {
