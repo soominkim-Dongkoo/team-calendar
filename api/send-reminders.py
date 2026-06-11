@@ -16,7 +16,7 @@ GET /api/send-reminders
 import json
 import os
 import urllib.parse
-import requests
+import urllib.request
 from http.server import BaseHTTPRequestHandler
 from datetime import datetime, timedelta, timezone
 
@@ -28,18 +28,34 @@ CRON_SECRET = os.environ.get('CRON_SECRET', '')
 
 _slack_id_cache = {}  # email → slack_user_id 캐시
 
+def _http_get(url, headers=None):
+    req = urllib.request.Request(url, headers=headers or {})
+    with urllib.request.urlopen(req, timeout=10) as res:
+        return json.loads(res.read().decode())
+
+def _http_post(url, headers=None, data=None):
+    body = json.dumps(data or {}).encode()
+    req = urllib.request.Request(url, data=body, headers=headers or {}, method='POST')
+    try:
+        with urllib.request.urlopen(req, timeout=10) as res:
+            return json.loads(res.read().decode())
+    except Exception:
+        return {}
+
+def _http_patch(url, headers=None, data=None):
+    body = json.dumps(data or {}).encode()
+    req = urllib.request.Request(url, data=body, headers=headers or {}, method='PATCH')
+    try:
+        urllib.request.urlopen(req, timeout=10)
+    except Exception:
+        pass
+
 def slack_id_from_email(email):
-    """업무 이메일로 Slack 유저 ID 조회 (DM용)"""
     if email in _slack_id_cache:
         return _slack_id_cache[email]
     try:
-        r = requests.get(
-            'https://slack.com/api/users.lookupByEmail',
-            headers={'Authorization': f'Bearer {SLACK_TOKEN}'},
-            params={'email': email},
-            timeout=10,
-        )
-        data = r.json()
+        url = f'https://slack.com/api/users.lookupByEmail?email={urllib.parse.quote(email)}'
+        data = _http_get(url, headers={'Authorization': f'Bearer {SLACK_TOKEN}'})
         uid = data.get('user', {}).get('id') if data.get('ok') else None
         if uid:
             _slack_id_cache[email] = uid
@@ -57,12 +73,17 @@ def _sb_headers():
 
 def sb_get(table, params):
     qs = urllib.parse.urlencode(params)
-    r = requests.get(f'{SB_URL}/rest/v1/{table}?{qs}', headers=_sb_headers(), timeout=10)
-    return r.json() if r.ok else []
+    try:
+        return _http_get(f'{SB_URL}/rest/v1/{table}?{qs}', headers=_sb_headers())
+    except Exception:
+        return []
 
 def sb_patch(table, row_id, data):
-    url = f'{SB_URL}/rest/v1/{table}?id=eq.{row_id}'
-    requests.patch(url, headers=_sb_headers(), json=data, timeout=10)
+    _http_patch(
+        f'{SB_URL}/rest/v1/{table}?id=eq.{row_id}',
+        headers=_sb_headers(),
+        data=data,
+    )
 
 def send_slack(channel, reminder, is_team):
     if not SLACK_TOKEN or not channel:
@@ -70,25 +91,22 @@ def send_slack(channel, reminder, is_team):
     time_str = (reminder.get('start_time') or '')[:5] or '종일'
     label = '팀 일정' if is_team else '개인 일정'
     text = f'🔔 *[{label} 알림]* {reminder["title"]}\n📅 {reminder["start_date"]} {time_str}'
-    requests.post(
+    _http_post(
         'https://slack.com/api/chat.postMessage',
         headers={'Authorization': f'Bearer {SLACK_TOKEN}', 'Content-Type': 'application/json'},
-        json={'channel': channel, 'text': text},
-        timeout=10,
+        data={'channel': channel, 'text': text},
     )
 
 class handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
-        # 인증
         if self.headers.get('x-cron-secret', '') != CRON_SECRET:
             self._send(401, {'error': 'unauthorized'})
             return
 
         now = datetime.now(timezone.utc)
-        ago = now - timedelta(minutes=2)  # 최대 2분 지연 허용
+        ago = now - timedelta(minutes=2)
 
-        # 발송 대상 조회: reminder_at 범위 내 + 미발송
         reminders = sb_get('manual_events', [
             ('select', '*'),
             ('reminder_at', f'gte.{ago.isoformat()}'),
@@ -102,17 +120,13 @@ class handler(BaseHTTPRequestHandler):
             users = sb_get('users', [('select', 'user_id,name,email'), ('user_id', f'eq.{owner}')])
             user = users[0] if users else {}
 
-            # Slack
             if r.get('is_team'):
-                # 팀 이벤트 → 팀 채널
                 send_slack(SLACK_CH, r, is_team=True)
             elif user.get('email'):
-                # 개인 이벤트 → 이메일로 Slack 유저 ID 조회 후 DM
                 uid = slack_id_from_email(user['email'])
                 if uid:
                     send_slack(uid, r, is_team=False)
 
-            # 발송 완료 기록
             sb_patch('manual_events', r['id'], {'reminder_sent_at': now.isoformat()})
             sent_titles.append(r.get('title', ''))
 
