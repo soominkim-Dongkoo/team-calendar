@@ -1335,10 +1335,10 @@
   <div class="detail-row"><span class="detail-key">시간</span><span class="detail-val" id="detail-time"></span></div>
   <div class="detail-row" id="detail-room-row"><span class="detail-key">회의실</span><span class="detail-val" id="detail-room"></span></div>
   <div class="detail-row" id="detail-url-row"><span class="detail-key">URL</span><span class="detail-val"><a id="detail-url" href="#" target="_blank" style="color:#4361ee;text-decoration:none;">기안 열기 →</a></span></div>
-  <div class="detail-row" id="detail-reminder-row" style="display:none;align-items:center;">
+  <div class="detail-row" id="detail-reminder-row" style="display:none;align-items:flex-start;">
     <span class="detail-key">알림</span>
     <span class="detail-val" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
-      <label class="toggle-switch toggle-switch-sm" style="margin-bottom:0;">
+      <label class="toggle-switch toggle-switch-sm" style="margin-bottom:0;margin-top:1px;">
         <input type="checkbox" id="detail-reminder-on" onchange="onDetailReminderToggle()" />
         <span class="toggle-slider"></span>
       </label>
@@ -2410,10 +2410,10 @@
   function onDetailReminderToggle() {
     const on = document.getElementById('detail-reminder-on').checked;
     document.getElementById('detail-reminder-inputs').style.display = on ? 'flex' : 'none';
-    if (!on) saveDetailReminder();
+    if (!on) saveDetailReminder(false);
   }
 
-  async function saveDetailReminder() {
+  async function saveDetailReminder(closeAfter = true) {
     if (!_detailRecord || _detailRecord._source !== 'event') return;
     const on = document.getElementById('detail-reminder-on').checked;
     let reminder_at = null;
@@ -2427,7 +2427,7 @@
     const id = _detailRecord.id;
     const { error } = await sb.from('manual_events').update({ reminder_at }).eq('id', id);
     if (error) { showToast('저장에 실패했습니다.'); return; }
-    closeDetail();
+    if (closeAfter) closeDetail();
     await loadAndRender(curYear, curMonth);
     showToast(on ? '알림이 설정됐습니다.' : '알림이 해제됐습니다.');
   }
