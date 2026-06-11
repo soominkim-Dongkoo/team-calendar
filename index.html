@@ -1350,10 +1350,10 @@
       </label>
       <div id="detail-reminder-inputs" style="display:none;flex-basis:100%;flex-wrap:wrap;gap:4px;align-items:center;">
         <input type="date" id="detail-reminder-date" onchange="onReminderDateChange();showReminderSaveBtn()" class="reminder-date-input" style="font-size:11px;padding:2px 5px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);font-family:inherit;" />
-        <div class="reminder-time-row" style="display:flex;gap:4px;align-items:center;">
-          <select id="detail-reminder-hour" onchange="onReminderHourChange();showReminderSaveBtn()" style="font-size:11px;padding:2px 3px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);font-family:inherit;"></select>
-          <select id="detail-reminder-min" onchange="showReminderSaveBtn()" style="font-size:11px;padding:2px 3px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);font-family:inherit;"></select>
-          <button id="detail-reminder-save-btn" onclick="saveDetailReminder()" style="display:none;font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface-hover);color:var(--text-secondary);cursor:pointer;font-family:inherit;">저장</button>
+        <div class="reminder-time-row" style="display:flex;gap:4px;align-items:center;width:100%;">
+          <select id="detail-reminder-hour" onchange="onReminderHourChange();showReminderSaveBtn()" style="flex:1;font-size:11px;padding:2px 3px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);font-family:inherit;height:26px;box-sizing:border-box;min-width:0;"></select>
+          <select id="detail-reminder-min" onchange="showReminderSaveBtn()" style="flex:1;font-size:11px;padding:2px 3px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);font-family:inherit;height:26px;box-sizing:border-box;min-width:0;"></select>
+          <button id="detail-reminder-save-btn" onclick="saveDetailReminder()" style="display:none;font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface-hover);color:var(--text-secondary);cursor:pointer;font-family:inherit;height:26px;box-sizing:border-box;">저장</button>
         </div>
       </div>
     </span>
@@ -1528,10 +1528,10 @@
           <option value="20">20시</option><option value="21">21시</option><option value="22">22시</option><option value="23">23시</option>
         </select>
         <select id="ev-reminder-min" disabled>
-          <option value="00">00</option><option value="05">05</option><option value="10">10</option>
-          <option value="15">15</option><option value="20">20</option><option value="25">25</option>
-          <option value="30">30</option><option value="35">35</option><option value="40">40</option>
-          <option value="45">45</option><option value="50">50</option><option value="55">55</option>
+          <option value="00">00분</option><option value="05">05분</option><option value="10">10분</option>
+          <option value="15">15분</option><option value="20">20분</option><option value="25">25분</option>
+          <option value="30">30분</option><option value="35">35분</option><option value="40">40분</option>
+          <option value="45">45분</option><option value="50">50분</option><option value="55">55분</option>
         </select>
       </div>
     </div>
@@ -2346,10 +2346,12 @@
 
   let _detailRecord = null;
   let _detailAnchor = null;
+  let _detailAnchorRect = null;
 
   function openDetail(r, anchor, readOnly = false) {
     _detailRecord = r;
     _detailAnchor = anchor;
+    _detailAnchorRect = anchor.getBoundingClientRect();
     const popup = document.getElementById('detail-popup');
     const isCompany = r._source === 'event' && r.event_type === 'company';
     const isMyCompanyCopy = isCompany && !r.is_team;
@@ -2419,8 +2421,8 @@
 
   function _repositionDetailPopup() {
     const popup = document.getElementById('detail-popup');
-    if (!popup || !_detailAnchor) return;
-    const rect = _detailAnchor.getBoundingClientRect();
+    if (!popup || !_detailAnchorRect) return;
+    const rect = _detailAnchorRect;
     const pw = popup.offsetWidth;
     const ph = popup.offsetHeight;
     const vw = window.innerWidth;
@@ -2438,6 +2440,7 @@
     document.getElementById('detail-popup').classList.remove('open');
     _detailRecord = null;
     _detailAnchor = null;
+    _detailAnchorRect = null;
   }
 
   function _todayStr() {
