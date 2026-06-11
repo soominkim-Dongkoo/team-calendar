@@ -2318,10 +2318,10 @@
     document.getElementById('detail-edit-btn').style.display = isEditable ? 'inline-flex' : 'none';
     document.getElementById('detail-delete-btn').style.display = (isEditable || isMyCompanyCopy) ? 'inline-flex' : 'none';
 
-    // 알림 설정 (전사 회의에서만)
+    // 알림 설정 (My에 추가된 전사 회의 복사본에서만)
     const reminderRow = document.getElementById('detail-reminder-row');
-    reminderRow.style.display = isCompany ? '' : 'none';
-    if (isCompany) {
+    reminderRow.style.display = isMyCompanyCopy ? '' : 'none';
+    if (isMyCompanyCopy) {
       const on = !!r.reminder_at;
       document.getElementById('detail-reminder-on').checked = on;
       const inp = document.getElementById('detail-reminder-inputs');
@@ -2339,8 +2339,9 @@
     }
 
     // 내 일정에 추가 버튼 (팀 뷰 전사 회의에서만, My 복사본에서는 숨김)
-    document.getElementById('detail-add-my-row').style.display =
-      (isCompany && r.is_team && currentView === 'team') ? '' : 'none';
+    const showAddMy = isCompany && r.is_team && currentView === 'team';
+    document.getElementById('detail-add-my-row').style.display = showAddMy ? '' : 'none';
+    document.getElementById('detail-add-my-btn').style.display = showAddMy ? 'inline-flex' : 'none';
 
     const periodText = r.start_date === r.end_date
       ? r.start_date
