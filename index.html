@@ -1322,6 +1322,10 @@
       <label>비밀번호</label>
       <input type="password" id="login-pw" placeholder="비밀번호를 입력하세요" autocomplete="current-password" />
     </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+      <input type="checkbox" id="login-keep" checked style="width:14px;height:14px;cursor:pointer;" />
+      <label for="login-keep" style="font-size:12px;color:var(--text-muted);cursor:pointer;">로그인 유지</label>
+    </div>
     <div class="login-error" id="login-error"></div>
     <button class="btn-login" onclick="doLogin()">로그인</button>
   </div>
@@ -1980,7 +1984,7 @@
   }
 
   let currentUser = (() => {
-    try { return JSON.parse(localStorage.getItem('calUser')) || null; } catch { return null; }
+    try { return JSON.parse(localStorage.getItem('calUser') || sessionStorage.getItem('calUser')) || null; } catch { return null; }
   })();
 
   function updateAvatar() {
@@ -2018,7 +2022,8 @@
       return;
     }
     currentUser = data;
-    localStorage.setItem('calUser', JSON.stringify(data));
+    const keep = document.getElementById('login-keep').checked;
+    (keep ? localStorage : sessionStorage).setItem('calUser', JSON.stringify(data));
     document.getElementById('login-overlay').classList.remove('open');
     updateAvatar();
     loadAndRender(curYear, curMonth);
@@ -2026,6 +2031,7 @@
 
   function logout() {
     localStorage.removeItem('calUser');
+    sessionStorage.removeItem('calUser');
     localStorage.removeItem('daouSession');
     _daouSession = null;
     currentUser = null;
