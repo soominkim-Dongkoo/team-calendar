@@ -1063,6 +1063,7 @@
     @media (max-width: 768px) {
       .reminder-date-input { width: 100%; box-sizing: border-box; flex-basis: 100%; }
       .reminder-time-row { flex-basis: 100%; }
+      .detail-popup { width: calc(100vw - 48px); max-width: calc(100vw - 48px); box-sizing: border-box; }
       sidebar { display:none !important; }
       .calendar-area { padding: 10px 12px 0; }
       .btn-simulate-mobile { display:none !important; }
@@ -1120,6 +1121,9 @@
     }
     body.simulate-mobile sidebar { display:none !important; }
     body.simulate-mobile .calendar-area { padding: 10px 12px 0; }
+    body.simulate-mobile .detail-popup { width: calc(100vw - 48px); max-width: calc(100vw - 48px); box-sizing: border-box; }
+    body.simulate-mobile .reminder-date-input { width: 100%; box-sizing: border-box; flex-basis: 100%; }
+    body.simulate-mobile .reminder-time-row { flex-basis: 100%; }
     body.simulate-mobile .btn-simulate-mobile { display:none !important; }
     body.simulate-mobile #darkToggle { display:none !important; }
     body.simulate-mobile .desktop-add-btn { display:none !important; }
