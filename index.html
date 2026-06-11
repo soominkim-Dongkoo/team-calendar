@@ -1354,7 +1354,7 @@
       </div>
     </span>
   </div>
-  <div class="detail-row" id="detail-add-my-row" style="display:none;">
+  <div class="detail-row" id="detail-add-my-row" style="display:none;margin-top:8px;">
     <span class="detail-key"></span>
     <span class="detail-val">
       <button id="detail-add-my-btn" onclick="addToMyCalendar()" class="detail-action-btn" style="background:#4361ee;color:#fff;border-color:#4361ee;">내 일정에 추가</button>
@@ -2327,9 +2327,9 @@
     document.getElementById('detail-edit-btn').style.display = isEditable ? 'inline-flex' : 'none';
     document.getElementById('detail-delete-btn').style.display = (isEditable || isMyCompanyCopy) ? 'inline-flex' : 'none';
 
-    // 알림 설정 (My 전사회의 복사본 + 업무/개인/회의 일정)
+    // 알림 설정 (My 전사회의 복사본 + 업무/개인/회의/전사회의 일정)
     const showReminder = isMyCompanyCopy ||
-      (r._source === 'event' && (r.event_type === 'work' || r.event_type === 'personal' || r.event_type === 'meeting'));
+      (r._source === 'event' && (r.event_type === 'work' || r.event_type === 'personal' || r.event_type === 'meeting' || r.event_type === 'company'));
     const reminderRow = document.getElementById('detail-reminder-row');
     reminderRow.style.display = showReminder ? '' : 'none';
     if (showReminder) {
