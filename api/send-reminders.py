@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Vercel Serverless Function — 알림 발송 (Resend 이메일 + Slack)
+Vercel Serverless Function — 알림 발송 (Slack)
 GET /api/send-reminders
   - cron-job.org 에서 1분마다 호출
   - 헤더: x-cron-secret: {CRON_SECRET}
@@ -8,7 +8,6 @@ GET /api/send-reminders
 환경변수 (Vercel Dashboard → Settings → Environment Variables):
   SUPABASE_URL          Supabase 프로젝트 URL
   SUPABASE_SERVICE_KEY  Supabase service_role 키 (Settings → API)
-  RESEND_API_KEY        Resend API 키
   SLACK_BOT_TOKEN       Slack Bot OAuth 토큰 (xoxb-...)
   SLACK_TEAM_CHANNEL_ID 팀 채널 ID (예: C012AB3CD)
   CRON_SECRET           cron 호출 인증용 임의 문자열
@@ -23,7 +22,6 @@ from datetime import datetime, timedelta, timezone
 
 SB_URL      = os.environ.get('SUPABASE_URL', '')
 SB_KEY      = os.environ.get('SUPABASE_SERVICE_KEY', '')
-RESEND_KEY  = os.environ.get('RESEND_API_KEY', '')
 SLACK_TOKEN = os.environ.get('SLACK_BOT_TOKEN', '')
 SLACK_CH    = os.environ.get('SLACK_TEAM_CHANNEL_ID', '')
 CRON_SECRET = os.environ.get('CRON_SECRET', '')
@@ -66,24 +64,6 @@ def sb_patch(table, row_id, data):
     url = f'{SB_URL}/rest/v1/{table}?id=eq.{row_id}'
     requests.patch(url, headers=_sb_headers(), json=data, timeout=10)
 
-def send_email(to_email, reminder):
-    time_str = (reminder.get('start_time') or '')[:5]
-    date_line = f'{reminder["start_date"]} {time_str}'.strip()
-    requests.post(
-        'https://api.resend.com/emails',
-        headers={'Authorization': f'Bearer {RESEND_KEY}', 'Content-Type': 'application/json'},
-        json={
-            'from': 'onboarding@resend.dev',
-            'to': [to_email],
-            'subject': f'[일정 알림] {reminder["title"]}',
-            'html': (
-                f'<p>🔔 <strong>{reminder["title"]}</strong> 일정이 곧 시작됩니다.</p>'
-                f'<p>📅 {date_line if date_line.strip() else reminder["start_date"]}</p>'
-            ),
-        },
-        timeout=10,
-    )
-
 def send_slack(channel, reminder, is_team):
     if not SLACK_TOKEN or not channel:
         return
@@ -121,10 +101,6 @@ class handler(BaseHTTPRequestHandler):
             owner = r.get('owner', '')
             users = sb_get('team_users', [('select', '*'), ('user_id', f'eq.{owner}')])
             user = users[0] if users else {}
-
-            # 이메일
-            if user.get('email'):
-                send_email(user['email'], r)
 
             # Slack
             if r.get('is_team'):
