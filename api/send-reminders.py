@@ -28,6 +28,27 @@ SLACK_TOKEN = os.environ.get('SLACK_BOT_TOKEN', '')
 SLACK_CH    = os.environ.get('SLACK_TEAM_CHANNEL_ID', '')
 CRON_SECRET = os.environ.get('CRON_SECRET', '')
 
+_slack_id_cache = {}  # email → slack_user_id 캐시
+
+def slack_id_from_email(email):
+    """업무 이메일로 Slack 유저 ID 조회 (DM용)"""
+    if email in _slack_id_cache:
+        return _slack_id_cache[email]
+    try:
+        r = requests.get(
+            'https://slack.com/api/users.lookupByEmail',
+            headers={'Authorization': f'Bearer {SLACK_TOKEN}'},
+            params={'email': email},
+            timeout=10,
+        )
+        data = r.json()
+        uid = data.get('user', {}).get('id') if data.get('ok') else None
+        if uid:
+            _slack_id_cache[email] = uid
+        return uid
+    except Exception:
+        return None
+
 def _sb_headers():
     return {
         'apikey': SB_KEY,
@@ -109,9 +130,11 @@ class handler(BaseHTTPRequestHandler):
             if r.get('is_team'):
                 # 팀 이벤트 → 팀 채널
                 send_slack(SLACK_CH, r, is_team=True)
-            elif user.get('slack_id'):
-                # 개인 이벤트 → DM
-                send_slack(user['slack_id'], r, is_team=False)
+            elif user.get('email'):
+                # 개인 이벤트 → 이메일로 Slack 유저 ID 조회 후 DM
+                uid = slack_id_from_email(user['email'])
+                if uid:
+                    send_slack(uid, r, is_team=False)
 
             # 발송 완료 기록
             sb_patch('manual_events', r['id'], {'reminder_sent_at': now.isoformat()})
