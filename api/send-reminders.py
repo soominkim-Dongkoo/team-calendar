@@ -99,7 +99,7 @@ class handler(BaseHTTPRequestHandler):
         sent_titles = []
         for r in (reminders or []):
             owner = r.get('owner', '')
-            users = sb_get('team_users', [('select', '*'), ('user_id', f'eq.{owner}')])
+            users = sb_get('users', [('select', 'user_id,name,email'), ('user_id', f'eq.{owner}')])
             user = users[0] if users else {}
 
             # Slack
