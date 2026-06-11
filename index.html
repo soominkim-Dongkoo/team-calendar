@@ -2429,7 +2429,8 @@
     if (error) { showToast('저장에 실패했습니다.'); return; }
     if (closeAfter) closeDetail();
     await loadAndRender(curYear, curMonth);
-    showToast(on ? '알림이 설정됐습니다.' : '알림이 해제됐습니다.');
+    if (on) showToast('알림이 설정됐습니다.');
+    else if (_detailRecord.reminder_at) showToast('알림이 해제됐습니다.');
   }
 
   async function addToMyCalendar() {
