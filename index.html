@@ -1063,7 +1063,7 @@
     @media (max-width: 768px) {
       .reminder-date-input { width: 100%; box-sizing: border-box; flex-basis: 100%; }
       .reminder-time-row { flex-basis: 100%; }
-      .detail-popup { width: calc(100vw - 48px); max-width: calc(100vw - 48px); box-sizing: border-box; }
+      .detail-popup { width: 270px; max-width: calc(100vw - 24px); box-sizing: border-box; }
       sidebar { display:none !important; }
       .calendar-area { padding: 10px 12px 0; }
       .btn-simulate-mobile { display:none !important; }
@@ -1121,7 +1121,7 @@
     }
     body.simulate-mobile sidebar { display:none !important; }
     body.simulate-mobile .calendar-area { padding: 10px 12px 0; }
-    body.simulate-mobile .detail-popup { width: calc(100vw - 48px); max-width: calc(100vw - 48px); box-sizing: border-box; }
+    body.simulate-mobile .detail-popup { width: 270px; max-width: calc(100vw - 24px); box-sizing: border-box; }
     body.simulate-mobile .reminder-date-input { width: 100%; box-sizing: border-box; flex-basis: 100%; }
     body.simulate-mobile .reminder-time-row { flex-basis: 100%; }
     body.simulate-mobile .btn-simulate-mobile { display:none !important; }
@@ -1864,7 +1864,7 @@
       sb.from('leave_records').select('*')
         .lte('start_date', last).gte('end_date', first).gte('start_date', '2026-01-01'),
       sb.from('manual_events').select('*')
-        .lte('start_date', last).gte('end_date', first)
+        .lte('start_date', last).gte('end_date', first).order('created_at', { ascending: true })
     ]);
 
     const leaves = (leaveRes.data || []).map(r => ({ ...r, _source: 'leave', _chipClass: 'chip-vacation' }));
@@ -2087,7 +2087,10 @@
       const ta = order[a._chipClass] ?? 99;
       const tb = order[b._chipClass] ?? 99;
       if (ta !== tb) return ta - tb;
-      return (NAME_ORDER[a.name] ?? 99) - (NAME_ORDER[b.name] ?? 99);
+      const na = (NAME_ORDER[a.name] ?? 99);
+      const nb = (NAME_ORDER[b.name] ?? 99);
+      if (na !== nb) return na - nb;
+      return (a.created_at || a.doc_id || a.id || '').localeCompare(b.created_at || b.doc_id || b.id || '');
     });
   }
 
@@ -2411,21 +2414,24 @@
     popup.style.top  = `${rect.bottom + 6}px`;
     popup.style.left = `${rect.left}px`;
     popup.classList.add('open');
+    requestAnimationFrame(_repositionDetailPopup);
+  }
 
-    // 화면 오른쪽 넘침 방지
-    requestAnimationFrame(() => {
-      const pw = popup.offsetWidth;
-      const vw = window.innerWidth;
-      if (rect.left + pw > vw - 8) {
-        popup.style.left = `${vw - pw - 8}px`;
-      }
-      // 화면 아래 넘침 방지
-      const ph = popup.offsetHeight;
-      const vh = window.innerHeight;
-      if (rect.bottom + 6 + ph > vh - 8) {
-        popup.style.top = `${rect.top - ph - 6}px`;
-      }
-    });
+  function _repositionDetailPopup() {
+    const popup = document.getElementById('detail-popup');
+    if (!popup || !_detailAnchor) return;
+    const rect = _detailAnchor.getBoundingClientRect();
+    const pw = popup.offsetWidth;
+    const ph = popup.offsetHeight;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    let left = rect.left;
+    if (left + pw > vw - 8) left = vw - pw - 8;
+    if (left < 8) left = 8;
+    popup.style.left = `${left}px`;
+    let top = rect.bottom + 6;
+    if (top + ph > vh - 8) top = Math.max(8, rect.top - ph - 6);
+    popup.style.top = `${top}px`;
   }
 
   function closeDetail() {
@@ -2515,8 +2521,12 @@
   function onDetailReminderToggle() {
     const on = document.getElementById('detail-reminder-on').checked;
     document.getElementById('detail-reminder-inputs').style.display = on ? 'flex' : 'none';
-    if (on) showReminderSaveBtn();
-    else saveDetailReminder(false);
+    if (on) {
+      showReminderSaveBtn();
+      requestAnimationFrame(_repositionDetailPopup);
+    } else {
+      saveDetailReminder(false);
+    }
   }
 
   async function saveDetailReminder(closeAfter = true) {

@@ -76,6 +76,7 @@ def _open_dm(user_id):
         headers={'Authorization': f'Bearer {SLACK_TOKEN}', 'Content-Type': 'application/json'},
         data={'users': user_id},
     )
+    print(f'[open_dm] user={user_id} ok={result.get("ok")} error={result.get("error")} channel={result.get("channel", {}).get("id")}')
     return result.get('channel', {}).get('id') if result.get('ok') else None
 
 def send_slack(channel, reminder, is_team):
