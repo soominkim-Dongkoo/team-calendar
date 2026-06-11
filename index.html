@@ -2327,9 +2327,9 @@
     document.getElementById('detail-edit-btn').style.display = isEditable ? 'inline-flex' : 'none';
     document.getElementById('detail-delete-btn').style.display = (isEditable || isMyCompanyCopy) ? 'inline-flex' : 'none';
 
-    // 알림 설정 (My 전사회의 복사본 + 업무/개인 일정)
+    // 알림 설정 (My 전사회의 복사본 + 업무/개인/회의 일정)
     const showReminder = isMyCompanyCopy ||
-      (r._source === 'event' && (r.event_type === 'work' || r.event_type === 'personal'));
+      (r._source === 'event' && (r.event_type === 'work' || r.event_type === 'personal' || r.event_type === 'meeting'));
     const reminderRow = document.getElementById('detail-reminder-row');
     reminderRow.style.display = showReminder ? '' : 'none';
     if (showReminder) {
