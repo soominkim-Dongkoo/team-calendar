@@ -2425,23 +2425,20 @@
   async function addToMyCalendar() {
     if (!_detailRecord || !currentUser) return;
     const r = _detailRecord;
-    try {
-      await sb.from('manual_events').insert({
-        title: r.title,
-        event_type: 'company',
-        owner: currentUser.user_id,
-        start_date: r.start_date,
-        end_date: r.end_date,
-        start_time: r.start_time || null,
-        end_time: r.end_time || null,
-        is_team: false,
-      });
-      closeDetail();
-      await loadAndRender(curYear, curMonth);
-      showToast('내 일정에 추가됐습니다.');
-    } catch {
-      showToast('추가에 실패했습니다.');
-    }
+    const { error } = await sb.from('manual_events').insert({
+      title: r.title,
+      event_type: 'company',
+      owner: currentUser.user_id,
+      start_date: r.start_date,
+      end_date: r.end_date,
+      start_time: r.start_time || null,
+      end_time: r.end_time || null,
+      is_team: false,
+    });
+    if (error) { showToast('추가 실패: ' + error.message); return; }
+    closeDetail();
+    await loadAndRender(curYear, curMonth);
+    showToast('My 뷰에 추가됐습니다.');
   }
 
   function deleteEvent() {
