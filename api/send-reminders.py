@@ -113,17 +113,20 @@ class handler(BaseHTTPRequestHandler):
             ('reminder_at', f'lte.{now.isoformat()}'),
             ('reminder_sent_at', 'is.null'),
         ])
+        print(f'[reminders] now={now.isoformat()} found={len(reminders or [])}')
 
         sent_titles = []
         for r in (reminders or []):
             owner = r.get('owner', '')
             users = sb_get('users', [('select', 'user_id,name,email'), ('user_id', f'eq.{owner}')])
             user = users[0] if users else {}
+            print(f'[event] title={r.get("title")} is_team={r.get("is_team")} owner={owner} email={user.get("email")}')
 
             if r.get('is_team'):
                 send_slack(SLACK_CH, r, is_team=True)
             elif user.get('email'):
                 uid = slack_id_from_email(user['email'])
+                print(f'[slack_dm] email={user["email"]} uid={uid}')
                 if uid:
                     send_slack(uid, r, is_team=False)
 
