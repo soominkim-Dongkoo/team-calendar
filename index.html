@@ -1052,8 +1052,7 @@
     .mobile-date-btn { display:inline-flex; align-items:center; gap:5px; background:none; border:none; font-family:inherit; font-size:16px; font-weight:700; color:var(--text-primary); cursor:pointer; padding:4px 0; }
     #mobile-day-content .day-view-title { display:none; }
     .mobile-date-arrow { font-size:9px; color:var(--text-muted); }
-    #mobile-day-section { position:relative; }
-    .mobile-date-dropdown { position:absolute; top:auto; left:0; right:0; background:var(--surface); border:1px solid var(--border); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.12); max-height:220px; overflow-y:auto; z-index:200; }
+    .mobile-date-dropdown { position:fixed; background:var(--surface); border:1px solid var(--border); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.12); max-height:220px; overflow-y:auto; z-index:200; }
     .mobile-date-item { display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-bottom:1px solid var(--border); cursor:pointer; font-family:inherit; font-size:13px; color:var(--text-primary); }
     .mobile-date-item:last-child { border-bottom:none; }
     .mobile-date-item:hover { background:var(--hover); }
@@ -1939,10 +1938,11 @@
     if (!dd) return;
     const open = dd.style.display === 'none';
     if (open) {
-      // 버튼 하단에 위치 고정
       const btnRect = btn.getBoundingClientRect();
       const secRect = document.getElementById('mobile-day-section').getBoundingClientRect();
-      dd.style.top = (btnRect.bottom - secRect.top) + 'px';
+      dd.style.top = btnRect.bottom + 'px';
+      dd.style.left = secRect.left + 'px';
+      dd.style.right = (window.innerWidth - secRect.right) + 'px';
     }
     dd.style.display = open ? '' : 'none';
     if (arrow) arrow.textContent = open ? '▲' : '▼';
