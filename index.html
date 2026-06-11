@@ -1245,6 +1245,10 @@
       </div>
       <div class="legend" id="legend-personal" style="display:none">
         <label class="legend-item">
+          <input type="checkbox" checked onchange="toggleChip('chip-company', this, 'personal')">
+          <div class="legend-dot" style="background:#dd6b20"></div>전사 회의
+        </label>
+        <label class="legend-item">
           <input type="checkbox" checked onchange="toggleChip('chip-work', this, 'personal')">
           <div class="legend-dot" style="background:#68d391"></div>업무
         </label>
@@ -1255,10 +1259,6 @@
         <label class="legend-item">
           <input type="checkbox" checked onchange="toggleChip('chip-vacation', this, 'personal')">
           <div class="legend-dot" style="background:#718096"></div>휴가
-        </label>
-        <label class="legend-item">
-          <input type="checkbox" checked onchange="toggleChip('chip-company', this, 'personal')">
-          <div class="legend-dot" style="background:#dd6b20"></div>전사 회의
         </label>
       </div>
       <div class="cal-nav" style="position:absolute; left:50%; transform:translateX(-50%);">
@@ -1602,7 +1602,7 @@
   // ──────────────────────────────────────────────────────────
 
   const teamChipMap     = ['chip-company', 'chip-meeting', 'chip-vacation'];
-  const personalChipMap = ['chip-work', 'chip-personal', 'chip-vacation', 'chip-company'];
+  const personalChipMap = ['chip-company', 'chip-work', 'chip-personal', 'chip-vacation'];
   let currentView = 'team';
 
   const today = new Date();
@@ -2429,6 +2429,14 @@
   async function addToMyCalendar() {
     if (!_detailRecord || !currentUser) return;
     const r = _detailRecord;
+    const { data: existing } = await sb.from('manual_events')
+      .select('id').eq('event_type', 'company').eq('is_team', false)
+      .eq('owner', currentUser.user_id).eq('title', r.title)
+      .eq('start_date', r.start_date).eq('end_date', r.end_date).limit(1);
+    if (existing && existing.length > 0) {
+      showToast('이미 내 일정에 추가된 항목입니다.');
+      return;
+    }
     const { error } = await sb.from('manual_events').insert({
       title: r.title,
       event_type: 'company',
