@@ -8,7 +8,8 @@
     { "src": "*.html", "use": "@vercel/static" },
     { "src": "*.svg", "use": "@vercel/static" },
     { "src": "*.png", "use": "@vercel/static" },
-    { "src": "manifest.json", "use": "@vercel/static" }
+    { "src": "manifest.json", "use": "@vercel/static" },
+    { "src": "sw.js", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/reserve", "dest": "/api/reserve.py" },
@@ -18,6 +19,7 @@
     { "src": "/(.+\\.svg)", "dest": "/$1" },
     { "src": "/(.+\\.png)", "dest": "/$1" },
     { "src": "/manifest.json", "dest": "/manifest.json" },
+    { "src": "/sw.js", "dest": "/sw.js" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
