@@ -2336,7 +2336,7 @@
       if (r.reminder_at) {
         const dt = new Date(r.reminder_at);
         document.getElementById('detail-reminder-date').value = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
-        _initReminderPicker(dt.getHours(), Math.round(dt.getMinutes() / 5) * 5 % 60);
+        _initReminderPicker(dt.getHours(), Math.round(dt.getMinutes() / 5) * 5 % 60, true);
       } else {
         const today = _todayStr();
         const defaultDate = r.start_date >= today ? r.start_date : today;
@@ -2460,9 +2460,14 @@
     _buildReminderMins(isToday && h === now.getHours() ? Math.ceil((now.getMinutes()+1)/5)*5 : 0);
   }
 
-  function _initReminderPicker(selectedHour = null, selectedMin = null) {
+  function _initReminderPicker(selectedHour = null, selectedMin = null, noRestrict = false) {
     const dateEl = document.getElementById('detail-reminder-date');
     dateEl.min = _todayStr();
+    if (noRestrict) {
+      _buildReminderHours(0, selectedHour ?? 9);
+      _buildReminderMins(0, selectedMin);
+      return;
+    }
     const isToday = dateEl.value === _todayStr();
     const now = new Date();
     const minHour = isToday ? now.getHours() : 0;
