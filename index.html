@@ -826,6 +826,9 @@
     }
     .toggle-switch input:checked + .toggle-slider { background: #4361ee; }
     .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); }
+    .toggle-switch-sm { width: 28px; height: 16px; }
+    .toggle-switch-sm .toggle-slider::before { width: 12px; height: 12px; left: 2px; top: 2px; }
+    .toggle-switch-sm input:checked + .toggle-slider::before { transform: translateX(12px); }
 
     .time-wrap {
       display: flex;
@@ -1332,22 +1335,22 @@
   <div class="detail-row"><span class="detail-key">시간</span><span class="detail-val" id="detail-time"></span></div>
   <div class="detail-row" id="detail-room-row"><span class="detail-key">회의실</span><span class="detail-val" id="detail-room"></span></div>
   <div class="detail-row" id="detail-url-row"><span class="detail-key">URL</span><span class="detail-val"><a id="detail-url" href="#" target="_blank" style="color:#4361ee;text-decoration:none;">기안 열기 →</a></span></div>
-  <div class="detail-row" id="detail-reminder-row" style="display:none;">
+  <div class="detail-row" id="detail-reminder-row" style="display:none;align-items:center;">
     <span class="detail-key">알림</span>
-    <span class="detail-val" style="display:flex;flex-direction:column;gap:6px;">
-      <label class="toggle-switch" style="margin-bottom:0;">
+    <span class="detail-val" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+      <label class="toggle-switch toggle-switch-sm" style="margin-bottom:0;">
         <input type="checkbox" id="detail-reminder-on" onchange="onDetailReminderToggle()" />
         <span class="toggle-slider"></span>
       </label>
       <div id="detail-reminder-inputs" style="display:none;flex-wrap:wrap;gap:4px;align-items:center;">
-        <input type="date" id="detail-reminder-date" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);" />
-        <select id="detail-reminder-hour" style="font-size:12px;padding:3px 4px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);">
+        <input type="date" id="detail-reminder-date" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);font-family:inherit;" />
+        <select id="detail-reminder-hour" style="font-size:12px;padding:3px 4px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);font-family:inherit;">
           <option value="0">0시</option><option value="1">1시</option><option value="2">2시</option><option value="3">3시</option><option value="4">4시</option><option value="5">5시</option><option value="6">6시</option><option value="7">7시</option><option value="8">8시</option><option value="9">9시</option><option value="10">10시</option><option value="11">11시</option><option value="12">12시</option><option value="13">13시</option><option value="14">14시</option><option value="15">15시</option><option value="16">16시</option><option value="17">17시</option><option value="18">18시</option><option value="19">19시</option><option value="20">20시</option><option value="21">21시</option><option value="22">22시</option><option value="23">23시</option>
         </select>
-        <select id="detail-reminder-min" style="font-size:12px;padding:3px 4px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);">
+        <select id="detail-reminder-min" style="font-size:12px;padding:3px 4px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);font-family:inherit;">
           <option value="00">00</option><option value="05">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
         </select>
-        <button onclick="saveDetailReminder()" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-hover);color:var(--text-secondary);cursor:pointer;">저장</button>
+        <button onclick="saveDetailReminder()" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-hover);color:var(--text-secondary);cursor:pointer;font-family:inherit;">저장</button>
       </div>
     </span>
   </div>
@@ -2047,13 +2050,15 @@
   }
 
 
-  const CHIP_TYPE_ORDER = { 'chip-company': 0, 'chip-meeting': 1, 'chip-vacation': 2, 'chip-personal': 3 };
+  const CHIP_TYPE_ORDER_TEAM = { 'chip-company': 0, 'chip-meeting': 1, 'chip-vacation': 2, 'chip-personal': 3 };
+  const CHIP_TYPE_ORDER_MY   = { 'chip-company': 0, 'chip-vacation': 1, 'chip-work': 2, 'chip-personal': 3 };
   const NAME_ORDER = { '황유준': 0, '김수민': 1, '김경수': 2 };
   const EXCLUDED_NAMES = new Set(['정힘찬']);
   function sortEvents(events) {
+    const order = currentView === 'team' ? CHIP_TYPE_ORDER_TEAM : CHIP_TYPE_ORDER_MY;
     return [...events].sort((a, b) => {
-      const ta = CHIP_TYPE_ORDER[a._chipClass] ?? 99;
-      const tb = CHIP_TYPE_ORDER[b._chipClass] ?? 99;
+      const ta = order[a._chipClass] ?? 99;
+      const tb = order[b._chipClass] ?? 99;
       if (ta !== tb) return ta - tb;
       return (NAME_ORDER[a.name] ?? 99) - (NAME_ORDER[b.name] ?? 99);
     });
@@ -2322,10 +2327,12 @@
     document.getElementById('detail-edit-btn').style.display = isEditable ? 'inline-flex' : 'none';
     document.getElementById('detail-delete-btn').style.display = (isEditable || isMyCompanyCopy) ? 'inline-flex' : 'none';
 
-    // 알림 설정 (My에 추가된 전사 회의 복사본에서만)
+    // 알림 설정 (My 전사회의 복사본 + 업무/개인 일정)
+    const showReminder = isMyCompanyCopy ||
+      (r._source === 'event' && (r.event_type === 'work' || r.event_type === 'personal'));
     const reminderRow = document.getElementById('detail-reminder-row');
-    reminderRow.style.display = isMyCompanyCopy ? '' : 'none';
-    if (isMyCompanyCopy) {
+    reminderRow.style.display = showReminder ? '' : 'none';
+    if (showReminder) {
       const on = !!r.reminder_at;
       document.getElementById('detail-reminder-on').checked = on;
       const inp = document.getElementById('detail-reminder-inputs');
@@ -2361,7 +2368,7 @@
     document.getElementById('detail-room-row').style.display = isMeeting ? '' : 'none';
     document.getElementById('detail-room').textContent = r.meeting_room || '-';
 
-    document.getElementById('detail-url-row').style.display = isMeeting ? 'none' : '';
+    document.getElementById('detail-url-row').style.display = r._source === 'leave' ? '' : 'none';
     const urlEl = document.getElementById('detail-url');
     if (r.doc_url) {
       urlEl.href = r.doc_url;
