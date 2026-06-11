@@ -1343,10 +1343,10 @@
         <span class="toggle-slider"></span>
       </label>
       <div id="detail-reminder-inputs" style="display:none;flex-basis:100%;flex-wrap:wrap;gap:4px;align-items:center;">
-        <input type="date" id="detail-reminder-date" onchange="onReminderDateChange()" style="font-size:11px;padding:2px 5px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);font-family:inherit;" />
-        <select id="detail-reminder-hour" onchange="onReminderHourChange()" style="font-size:11px;padding:2px 3px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);font-family:inherit;"></select>
-        <select id="detail-reminder-min" style="font-size:11px;padding:2px 3px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);font-family:inherit;"></select>
-        <button onclick="saveDetailReminder()" style="font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface-hover);color:var(--text-secondary);cursor:pointer;font-family:inherit;">저장</button>
+        <input type="date" id="detail-reminder-date" onchange="onReminderDateChange();showReminderSaveBtn()" style="font-size:11px;padding:2px 5px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);font-family:inherit;" />
+        <select id="detail-reminder-hour" onchange="onReminderHourChange();showReminderSaveBtn()" style="font-size:11px;padding:2px 3px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);font-family:inherit;"></select>
+        <select id="detail-reminder-min" onchange="showReminderSaveBtn()" style="font-size:11px;padding:2px 3px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-primary);font-family:inherit;"></select>
+        <button id="detail-reminder-save-btn" onclick="saveDetailReminder()" style="display:none;font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface-hover);color:var(--text-secondary);cursor:pointer;font-family:inherit;">저장</button>
       </div>
     </span>
   </div>
@@ -2477,10 +2477,15 @@
     _buildReminderMins(minMin, selectedMin);
   }
 
+  function showReminderSaveBtn() {
+    document.getElementById('detail-reminder-save-btn').style.display = 'inline-block';
+  }
+
   function onDetailReminderToggle() {
     const on = document.getElementById('detail-reminder-on').checked;
     document.getElementById('detail-reminder-inputs').style.display = on ? 'flex' : 'none';
-    if (!on) saveDetailReminder(false);
+    if (on) showReminderSaveBtn();
+    else saveDetailReminder(false);
   }
 
   async function saveDetailReminder(closeAfter = true) {
@@ -2497,6 +2502,7 @@
     const id = _detailRecord.id;
     const { error } = await sb.from('manual_events').update({ reminder_at, reminder_sent_at: null }).eq('id', id);
     if (error) { showToast('저장에 실패했습니다.'); return; }
+    document.getElementById('detail-reminder-save-btn').style.display = 'none';
     if (closeAfter) closeDetail();
     await loadAndRender(curYear, curMonth);
     if (on) showToast('알림이 설정됐습니다.');
