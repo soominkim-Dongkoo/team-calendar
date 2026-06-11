@@ -2495,7 +2495,7 @@
       reminder_at = new Date(`${date}T${h}:${m}:00`).toISOString();
     }
     const id = _detailRecord.id;
-    const { error } = await sb.from('manual_events').update({ reminder_at }).eq('id', id);
+    const { error } = await sb.from('manual_events').update({ reminder_at, reminder_sent_at: null }).eq('id', id);
     if (error) { showToast('저장에 실패했습니다.'); return; }
     if (closeAfter) closeDetail();
     await loadAndRender(curYear, curMonth);
