@@ -70,9 +70,22 @@ def sb_patch(table, row_id, data):
         data=data,
     )
 
+def _open_dm(user_id):
+    result = _http_post(
+        'https://slack.com/api/conversations.open',
+        headers={'Authorization': f'Bearer {SLACK_TOKEN}', 'Content-Type': 'application/json'},
+        data={'users': user_id},
+    )
+    return result.get('channel', {}).get('id') if result.get('ok') else None
+
 def send_slack(channel, reminder, is_team):
     if not SLACK_TOKEN or not channel:
         return
+    # 개인 DM은 conversations.open으로 실제 DM 채널 ID 사용
+    if not is_team:
+        dm_channel = _open_dm(channel)
+        if dm_channel:
+            channel = dm_channel
     time_str = (reminder.get('start_time') or '')[:5] or '종일'
     label = '팀 일정' if is_team else '개인 일정'
     text = f'🔔 *[{label} 알림]* {reminder["title"]}\n📅 {reminder["start_date"]} {time_str}'
