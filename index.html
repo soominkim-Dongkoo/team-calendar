@@ -1256,6 +1256,10 @@
           <input type="checkbox" checked onchange="toggleChip('chip-vacation', this, 'personal')">
           <div class="legend-dot" style="background:#718096"></div>휴가
         </label>
+        <label class="legend-item">
+          <input type="checkbox" checked onchange="toggleChip('chip-company', this, 'personal')">
+          <div class="legend-dot" style="background:#dd6b20"></div>전사 회의
+        </label>
       </div>
       <div class="cal-nav" style="position:absolute; left:50%; transform:translateX(-50%);">
         <button onclick="moveMonth(-1)">‹</button>
@@ -1598,7 +1602,7 @@
   // ──────────────────────────────────────────────────────────
 
   const teamChipMap     = ['chip-company', 'chip-meeting', 'chip-vacation'];
-  const personalChipMap = ['chip-work', 'chip-personal', 'chip-vacation'];
+  const personalChipMap = ['chip-work', 'chip-personal', 'chip-vacation', 'chip-company'];
   let currentView = 'team';
 
   const today = new Date();
@@ -1618,8 +1622,8 @@
   }
 
   function loadState() {
-    try { return JSON.parse(localStorage.getItem('calViewState')) || { team: [true, true, true], personal: [true, true] }; }
-    catch { return { team: [true, true, true], personal: [true, true] }; }
+    try { return JSON.parse(localStorage.getItem('calViewState')) || { team: [true, true, true], personal: [true, true, true, true] }; }
+    catch { return { team: [true, true, true], personal: [true, true, true, true] }; }
   }
 
   function saveState(s) { localStorage.setItem('calViewState', JSON.stringify(s)); }
