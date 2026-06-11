@@ -2427,7 +2427,7 @@
       if (m < minMin) continue;
       const opt = document.createElement('option');
       opt.value = String(m).padStart(2, '0');
-      opt.textContent = String(m).padStart(2, '0');
+      opt.textContent = `${String(m).padStart(2, '0')}분`;
       if (selectedMin !== null && m === selectedMin) opt.selected = true;
       sel.appendChild(opt);
     }
