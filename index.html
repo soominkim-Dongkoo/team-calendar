@@ -2422,7 +2422,7 @@
       if (!date) { showToast('알림 날짜를 선택해주세요.'); return; }
       const h = String(document.getElementById('detail-reminder-hour').value).padStart(2, '0');
       const m = document.getElementById('detail-reminder-min').value;
-      reminder_at = `${date}T${h}:${m}:00`;
+      reminder_at = new Date(`${date}T${h}:${m}:00`).toISOString();
     }
     const id = _detailRecord.id;
     const { error } = await sb.from('manual_events').update({ reminder_at }).eq('id', id);
