@@ -1201,7 +1201,7 @@
   </div>
   <div class="header-right">
     <button class="btn-view-mode" id="btn-view-mode" onclick="toggleMobileView()">⊞ 그리드</button>
-    <button class="btn-dark btn-simulate-mobile" id="btn-simulate-mobile" onclick="toggleSimulateMobile()" title="모바일 레이아웃 미리보기">📱 모바일</button>
+    <button class="btn-dark btn-simulate-mobile" id="btn-simulate-mobile" onclick="toggleSimulateMobile()" title="모바일 레이아웃 미리보기">📱</button>
     <button class="btn-dark" id="darkToggle" onclick="toggleDark()" title="다크모드 전환">🌙</button>
     <button class="btn-add desktop-add-btn" onclick="openModal()">+ 일정 추가</button>
     <div class="avatar-wrap">
@@ -1883,7 +1883,7 @@
     _forceMobile = !_forceMobile;
     _mobileGrid = false;
     document.body.classList.toggle('simulate-mobile', _forceMobile);
-    document.getElementById('btn-simulate-mobile').textContent = _forceMobile ? '🖥 데스크톱' : '📱 모바일';
+    document.getElementById('btn-simulate-mobile').textContent = _forceMobile ? '🖥' : '📱';
     document.getElementById('btn-view-mode').textContent = '⊞ 그리드';
     const legend = document.getElementById('mobile-cal-legend');
     if (legend) legend.style.display = _forceMobile ? '' : 'none';
