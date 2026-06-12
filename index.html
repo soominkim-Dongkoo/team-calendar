@@ -462,7 +462,9 @@
     .day-cell.sunday .day-num { color: #fc8181; }
     .day-cell.saturday .day-num { color: #63b3ed; }
     .day-cell.today.sunday .day-num,
-    .day-cell.today.saturday .day-num { color: #fff; }
+    .day-cell.today.saturday .day-num,
+    .day-cell.today.holiday .day-num { color: #fff; }
+    .day-cell.holiday .day-num { color: #fc8181; }
 
     .day-header { display: flex; align-items: center; gap: 4px; }
     .holiday-badge {
@@ -1789,6 +1791,7 @@
       numEl.addEventListener('click', e => { e.stopPropagation(); openDayView(dateStr); });
       header.appendChild(numEl);
       if (HOLIDAYS[dateStr]) {
+        cell.classList.add('holiday');
         const badge = document.createElement('span');
         badge.className = 'holiday-badge';
         badge.textContent = HOLIDAYS[dateStr];
