@@ -464,6 +464,18 @@
     .day-cell.today.sunday .day-num,
     .day-cell.today.saturday .day-num { color: #fff; }
 
+    .day-header { display: flex; align-items: center; gap: 4px; }
+    .holiday-badge {
+      font-size: 9px;
+      font-weight: 600;
+      color: #fff;
+      background: #fc4f4f;
+      border-radius: 3px;
+      padding: 1px 4px;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+
     /* 이벤트 칩 */
     .event-chip {
       font-size: 11px;
@@ -1548,6 +1560,19 @@
 </div>
 
 <script>
+  const HOLIDAYS = {
+    '2025-01-01':'신정','2025-01-28':'설날연휴','2025-01-29':'설날','2025-01-30':'설날연휴',
+    '2025-03-01':'삼일절','2025-05-05':'어린이날','2025-05-06':'대체공휴일',
+    '2025-05-15':'부처님오신날','2025-06-06':'현충일','2025-08-15':'광복절',
+    '2025-10-03':'개천절','2025-10-05':'추석연휴','2025-10-06':'추석','2025-10-07':'추석연휴',
+    '2025-10-08':'대체공휴일','2025-10-09':'한글날','2025-12-25':'성탄절',
+    '2026-01-01':'신정','2026-02-17':'설날연휴','2026-02-18':'설날','2026-02-19':'설날연휴',
+    '2026-03-01':'삼일절','2026-03-02':'대체공휴일','2026-05-05':'어린이날',
+    '2026-05-24':'부처님오신날','2026-06-06':'현충일','2026-08-15':'광복절',
+    '2026-09-24':'추석연휴','2026-09-25':'추석','2026-09-26':'추석연휴',
+    '2026-10-03':'개천절','2026-10-05':'대체공휴일','2026-10-09':'한글날','2026-12-25':'성탄절',
+  };
+
   const SUPABASE_URL = 'https://vfqqwnkfszlrrekfejry.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_4OImNxzBy7jz236aI0TDkg_ye_vLU9L';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -1756,11 +1781,20 @@
       if (!isOther && year === today.getFullYear() && month === today.getMonth() && num === today.getDate())
         cell.classList.add('today');
 
+      const header = document.createElement('div');
+      header.className = 'day-header';
       const numEl = document.createElement('div');
       numEl.className = 'day-num';
       numEl.textContent = num;
       numEl.addEventListener('click', e => { e.stopPropagation(); openDayView(dateStr); });
-      cell.appendChild(numEl);
+      header.appendChild(numEl);
+      if (HOLIDAYS[dateStr]) {
+        const badge = document.createElement('span');
+        badge.className = 'holiday-badge';
+        badge.textContent = HOLIDAYS[dateStr];
+        header.appendChild(badge);
+      }
+      cell.appendChild(header);
 
       const activeTypes = getActiveTypes();
       const dayEvents = (eventMap[dateStr] || []).filter(r => {
