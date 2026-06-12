@@ -1794,8 +1794,9 @@
       if (!isOther && year === today.getFullYear() && month === today.getMonth() && num === today.getDate())
         cell.classList.add('today');
 
+      cell.style.alignItems = 'flex-start';
       const dayRow = document.createElement('div');
-      dayRow.style.cssText = 'display:flex;align-items:center;gap:4px';
+      dayRow.style.cssText = 'display:flex;align-items:center;gap:4px;align-self:flex-start';
       const numEl = document.createElement('div');
       numEl.className = 'day-num';
       numEl.textContent = num;
