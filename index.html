@@ -2745,7 +2745,8 @@
       grid.style.display = 'none';
       mds.style.display = '';
       if (legend) { legend.style.display = ''; updateMobileLegend(); }
-      openDayView(`${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`);
+      const fallback = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+      openDayView(_selectedDayStr || fallback);
     }
   }
 
