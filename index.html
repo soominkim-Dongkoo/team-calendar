@@ -434,7 +434,6 @@
       transition: background 0.1s;
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
       gap: 3px;
       position: relative;
     }
@@ -469,6 +468,9 @@
     .day-cell.holiday .day-num { color: #fc8181; }
 
     .holiday-badge {
+      position: absolute;
+      top: 8px;
+      left: 42px;
       font-size: 9px;
       font-weight: 600;
       color: #fff;
@@ -477,7 +479,6 @@
       padding: 1px 4px;
       line-height: 1.4;
       white-space: nowrap;
-      flex-shrink: 0;
     }
 
     /* 이벤트 칩 */
@@ -1108,7 +1109,7 @@
       .chip-more { font-size:9px; line-height:1.2; padding:0 2px; white-space:nowrap; touch-action:manipulation; }
       .event-chip { height:18px; font-size:10px; padding:0 4px; }
       .day-num { width:20px; height:20px; font-size:11px; }
-      .holiday-badge { font-size:6px; padding:1px 2px; }
+      .holiday-badge { font-size:6px; padding:1px 2px; top:3px; left:27px; }
       /* 모달 sticky 헤더 */
       .modal {
         width: calc(100vw - 24px);
@@ -1794,22 +1795,18 @@
       if (!isOther && year === today.getFullYear() && month === today.getMonth() && num === today.getDate())
         cell.classList.add('today');
 
-      cell.style.alignItems = 'flex-start';
-      const dayRow = document.createElement('div');
-      dayRow.style.cssText = 'display:flex;align-items:center;gap:4px;align-self:flex-start';
       const numEl = document.createElement('div');
       numEl.className = 'day-num';
       numEl.textContent = num;
       numEl.addEventListener('click', e => { e.stopPropagation(); openDayView(dateStr); });
-      dayRow.appendChild(numEl);
+      cell.appendChild(numEl);
       if (HOLIDAYS[dateStr]) {
         cell.classList.add('holiday');
         const badge = document.createElement('span');
         badge.className = 'holiday-badge';
         badge.textContent = HOLIDAYS[dateStr];
-        dayRow.appendChild(badge);
+        cell.appendChild(badge);
       }
-      cell.appendChild(dayRow);
 
       const activeTypes = getActiveTypes();
       const dayEvents = (eventMap[dateStr] || []).filter(r => {
