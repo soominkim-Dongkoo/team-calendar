@@ -2014,8 +2014,17 @@
     if (newMonth < 0)  { newMonth = 11; newYear--; }
     if (newYear < 2026) return;
     if (_selectedDayStr) {
+      const target = new Date(newYear, newMonth, 1);
+      const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
       const lastDay = new Date(newYear, newMonth + 1, 0).getDate();
-      const newDay = Math.min(today.getDate(), lastDay);
+      let newDay;
+      if (target < thisMonth) {
+        newDay = lastDay;
+      } else if (target.getTime() === thisMonth.getTime()) {
+        newDay = today.getDate();
+      } else {
+        newDay = 1;
+      }
       _selectedDayStr = `${newYear}-${pad(newMonth+1)}-${pad(newDay)}`;
     }
     curMonth = newMonth;
