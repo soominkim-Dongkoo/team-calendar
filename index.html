@@ -447,12 +447,11 @@
       font-weight: 600;
       width: 26px;
       height: 26px;
-      display: inline-flex;
+      display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 50%;
       color: var(--text-secondary);
-      vertical-align: middle;
       flex-shrink: 0;
     }
 
@@ -470,9 +469,6 @@
     .day-cell.holiday .day-num { color: #fc8181; }
 
     .holiday-badge {
-      display: inline-block;
-      vertical-align: middle;
-      margin-left: 4px;
       font-size: 9px;
       font-weight: 600;
       color: #fff;
@@ -481,6 +477,7 @@
       padding: 1px 4px;
       line-height: 1.4;
       white-space: nowrap;
+      flex-shrink: 0;
     }
 
     /* 이벤트 칩 */
@@ -1797,18 +1794,21 @@
       if (!isOther && year === today.getFullYear() && month === today.getMonth() && num === today.getDate())
         cell.classList.add('today');
 
+      const dayRow = document.createElement('div');
+      dayRow.style.cssText = 'display:flex;align-items:center;gap:4px';
       const numEl = document.createElement('div');
       numEl.className = 'day-num';
       numEl.textContent = num;
       numEl.addEventListener('click', e => { e.stopPropagation(); openDayView(dateStr); });
-      cell.appendChild(numEl);
+      dayRow.appendChild(numEl);
       if (HOLIDAYS[dateStr]) {
         cell.classList.add('holiday');
         const badge = document.createElement('span');
         badge.className = 'holiday-badge';
         badge.textContent = HOLIDAYS[dateStr];
-        cell.appendChild(badge);
+        dayRow.appendChild(badge);
       }
+      cell.appendChild(dayRow);
 
       const activeTypes = getActiveTypes();
       const dayEvents = (eventMap[dateStr] || []).filter(r => {
