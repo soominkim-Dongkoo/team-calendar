@@ -2013,16 +2013,10 @@
     if (newMonth > 11) { newMonth = 0;  newYear++; }
     if (newMonth < 0)  { newMonth = 11; newYear--; }
     if (newYear < 2026) return;
-    // 모바일: 현재 달 → Today, 이전 달 → 마지막날, 다음 달 → 첫째날
     if (_selectedDayStr) {
-      const isCurrentMonth = newYear === today.getFullYear() && newMonth === today.getMonth();
-      if (isCurrentMonth) {
-        _selectedDayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
-      } else {
-        const lastDay = new Date(newYear, newMonth + 1, 0).getDate();
-        const newDay = delta < 0 ? lastDay : 1;
-        _selectedDayStr = `${newYear}-${pad(newMonth+1)}-${pad(newDay)}`;
-      }
+      const lastDay = new Date(newYear, newMonth + 1, 0).getDate();
+      const newDay = Math.min(today.getDate(), lastDay);
+      _selectedDayStr = `${newYear}-${pad(newMonth+1)}-${pad(newDay)}`;
     }
     curMonth = newMonth;
     curYear  = newYear;
