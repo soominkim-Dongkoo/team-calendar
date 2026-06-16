@@ -304,6 +304,11 @@
       font-size: 11px; font-weight: 500; padding: 3px 8px;
       border-radius: 4px; color: #fff; white-space: nowrap;
       overflow: hidden; text-overflow: ellipsis;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .day-allday-chip > span:first-child {
+      flex: 1; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .day-timeline-wrap {
       position: relative;
@@ -2536,7 +2541,15 @@
       const chip = document.createElement('div');
       chip.className = 'day-allday-chip';
       chip.style.background = CHIP_COLOR[r._chipClass] || '#718096';
-      chip.textContent = r._source === 'leave' ? `${r.name} ${r.label}` : r.title;
+      const label = document.createElement('span');
+      label.textContent = r._source === 'leave' ? `${r.name} ${r.label}` : r.title;
+      chip.appendChild(label);
+      if (r.reminder_at) {
+        const bell = document.createElement('span');
+        bell.className = 'chip-bell';
+        bell.textContent = '🔔';
+        chip.appendChild(bell);
+      }
       alldayList.appendChild(chip);
     });
 
@@ -2605,12 +2618,21 @@
         background:${CHIP_COLOR[ev.r._chipClass] || '#718096'};
       `;
 
-      const titleEl = document.createElement('div');
-      titleEl.style.cssText = 'font-size:11px;font-weight:700;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;';
+      const titleRow = document.createElement('div');
+      titleRow.style.cssText = 'display:flex;align-items:center;gap:4px;overflow:hidden;';
+      const titleEl = document.createElement('span');
+      titleEl.style.cssText = 'flex:1;min-width:0;font-size:11px;font-weight:700;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;';
       titleEl.textContent = ev.r._source === 'leave'
         ? `${ev.r.name} ${ev.r.label}${ev.r.day_type !== '종일' ? ' ' + ev.r.day_type : ''}`
         : ev.r.title;
-      evEl.appendChild(titleEl);
+      titleRow.appendChild(titleEl);
+      if (ev.r.reminder_at) {
+        const bell = document.createElement('span');
+        bell.className = 'chip-bell';
+        bell.textContent = '🔔';
+        titleRow.appendChild(bell);
+      }
+      evEl.appendChild(titleRow);
 
       if (ev.r.meeting_room && height > 28) {
         const roomEl = document.createElement('div');
