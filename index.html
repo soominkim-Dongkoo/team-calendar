@@ -1128,6 +1128,7 @@
       .cal-nav { gap:4px; }
       .cal-nav h2 { font-size:18px; width:auto; min-width:110px; }
       /* 모바일 그리드: 셀 고정 크기 */
+      .days-grid { grid-template-rows: repeat(6, minmax(0, 1fr)); }
       .day-cell { min-height:0; padding:3px; overflow:hidden; }
       .chips-wrap.clipped { max-height:68px; transition:max-height 0.4s ease-in-out; }
       .chip-more { font-size:9px; line-height:1.2; padding:0 2px; white-space:nowrap; touch-action:manipulation; }
@@ -1187,6 +1188,7 @@
     body.simulate-mobile.sales-view .btn-view-mode { display:none !important; }
     body.simulate-mobile .cal-nav { gap:4px; }
     body.simulate-mobile .cal-nav h2 { font-size:18px; width:auto; min-width:110px; }
+    body.simulate-mobile .days-grid { grid-template-rows: repeat(6, minmax(0, 1fr)); }
     body.simulate-mobile .day-cell { min-height:0; padding:3px; overflow:hidden; }
     body.simulate-mobile .chips-wrap.clipped { max-height:68px; transition:max-height 0.4s ease-in-out; }
     body.simulate-mobile .chip-more { font-size:9px; line-height:1.2; padding:0 2px; white-space:nowrap; touch-action:manipulation; }
@@ -1725,7 +1727,7 @@
   function openSalesDayPopup(dateStr) {
     const sales = salesData[dateStr] || 0;
     const ret   = returnsData[dateStr] || 0;
-    const net   = sales + ret;
+    const net   = sales - ret;
     const fmt = v => (v / 100000000).toFixed(2) + '억';
     const [y, m, d] = dateStr.split('-');
     document.getElementById('sales-popup-date').textContent = `${parseInt(m)}월 ${parseInt(d)}일`;
