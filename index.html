@@ -13,6 +13,7 @@
   <link rel="apple-touch-icon" href="/icon-192.png" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <style>
     html { scrollbar-gutter: stable; }
     :root {
@@ -104,9 +105,9 @@
     .view-toggle button {
       border: none;
       background: transparent;
-      padding: 5px 14px;
+      padding: 4px 10px;
       border-radius: 6px;
-      font-size: 13px;
+      font-size: 12px;
       cursor: pointer;
       color: var(--text-muted);
       font-weight: 500;
@@ -480,6 +481,23 @@
       line-height: 1.4;
       white-space: nowrap;
     }
+
+    .sales-daily, .sales-cumulative {
+      position: absolute;
+      right: 8px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .sales-daily     { bottom: 24px; font-size: 13px; color: #48bb78; }
+    .sales-cumulative{ bottom: 7px;  font-size: 11px; color: #4361ee; }
+    .day-cell.other-month .sales-daily,
+    .day-cell.other-month .sales-cumulative { color: var(--text-faint); }
+    .desktop-upload-btn { display: none; background: #1e7e45 !important; }
+    /* Sales 뷰 전환 */
+    body.sales-view .desktop-add-btn  { display: none !important; }
+    body.sales-view .desktop-upload-btn { display: inline-flex !important; }
+    body.sales-view #btn-view-mode    { display: none !important; }
+    body.sales-view .cal-add-btn      { display: none !important; }
 
     /* 이벤트 칩 */
     .event-chip {
@@ -1088,18 +1106,23 @@
       .btn-simulate-mobile { display:none !important; }
       #darkToggle { display:none !important; }
       .desktop-add-btn { display:none !important; }
+      .desktop-upload-btn { display:none !important; }
       /* 헤더: 한 줄, view-toggle 가로 중앙 */
       header { padding:0 10px; height:50px; }
-      .header-right { gap:6px; margin-left:auto; }
+      .logo { flex:1; }
+      .header-right { gap:6px; margin-left:0; flex:1; justify-content:flex-end; }
       .view-toggle { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
+      .view-toggle button { font-size:11px; padding:5px 8px; }
       .logo img { height:20px; }
       .logo-team { font-size:12px; }
       .logo-sub { display:block; }
       /* 캘린더 헤더 행 */
       .cal-header-row .legend { display:none !important; }
       .cal-add-btn { display:inline-flex !important; padding:6px 12px; font-size:12px; }
+      body.sales-view .cal-add-btn { visibility:hidden !important; }
       /* btn-view-mode → 헤더에 표시 */
       .btn-view-mode { display:inline-flex !important; align-items:center; gap:3px; font-size:11px; }
+      body.sales-view .btn-view-mode { display:none !important; }
       /* cal-nav 화살표 간격 */
       .cal-nav { gap:4px; }
       .cal-nav h2 { font-size:18px; width:auto; min-width:110px; }
@@ -1147,15 +1170,20 @@
     body.simulate-mobile .btn-simulate-mobile { display:none !important; }
     body.simulate-mobile #darkToggle { display:none !important; }
     body.simulate-mobile .desktop-add-btn { display:none !important; }
+    body.simulate-mobile .desktop-upload-btn { display:none !important; }
     body.simulate-mobile header { padding:0 10px; height:50px; }
-    body.simulate-mobile .header-right { gap:6px; margin-left:auto; }
+    body.simulate-mobile .logo { flex:1; }
+    body.simulate-mobile .header-right { gap:6px; margin-left:0; flex:1; justify-content:flex-end; }
     body.simulate-mobile .view-toggle { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
+    body.simulate-mobile .view-toggle button { font-size:11px; padding:5px 8px; }
     body.simulate-mobile .logo img { height:20px; }
     body.simulate-mobile .logo-team { font-size:12px; }
     body.simulate-mobile .logo-sub { display:block; }
     body.simulate-mobile .cal-header-row .legend { display:none !important; }
     body.simulate-mobile .cal-add-btn { display:inline-flex !important; padding:6px 12px; font-size:12px; }
+    body.simulate-mobile.sales-view .cal-add-btn { visibility:hidden !important; }
     body.simulate-mobile .btn-view-mode { display:inline-flex !important; align-items:center; gap:3px; font-size:11px; }
+    body.simulate-mobile.sales-view .btn-view-mode { display:none !important; }
     body.simulate-mobile .cal-nav { gap:4px; }
     body.simulate-mobile .cal-nav h2 { font-size:18px; width:auto; min-width:110px; }
     body.simulate-mobile .day-cell { min-height:0; padding:3px; overflow:hidden; }
@@ -1198,12 +1226,15 @@
   <div class="view-toggle">
     <button class="active" onclick="setView('team', this)">Team</button>
     <button onclick="setView('personal', this)">My</button>
+    <button onclick="setView('sales', this)">Sales</button>
   </div>
   <div class="header-right">
     <button class="btn-view-mode" id="btn-view-mode" onclick="toggleMobileView()">⊞ 그리드</button>
     <button class="btn-dark btn-simulate-mobile" id="btn-simulate-mobile" onclick="toggleSimulateMobile()" title="모바일 레이아웃 미리보기">📱</button>
     <button class="btn-dark" id="darkToggle" onclick="toggleDark()" title="다크모드 전환">🌙</button>
     <button class="btn-add desktop-add-btn" onclick="openModal()">+ 일정 추가</button>
+    <button class="btn-add desktop-upload-btn" onclick="document.getElementById('sales-file-input').click()">↑ 엑셀 업로드</button>
+    <input type="file" id="sales-file-input" accept=".xlsx,.xls" style="display:none" onchange="handleSalesUpload(this)">
     <div class="avatar-wrap">
       <div class="user-avatar" id="user-avatar" onclick="toggleAvatarMenu()"></div>
       <div class="avatar-menu" id="avatar-menu">
@@ -1271,6 +1302,16 @@
         <label class="legend-item">
           <input type="checkbox" checked onchange="toggleChip('chip-vacation', this, 'team')">
           <div class="legend-dot" style="background:#718096"></div>휴가
+        </label>
+      </div>
+      <div class="legend" id="legend-sales" style="display:none">
+        <label class="legend-item">
+          <input type="checkbox" checked onchange="toggleSalesDisplay('daily', this.checked)">
+          <div class="legend-dot" style="background:#48bb78"></div>당일 매출
+        </label>
+        <label class="legend-item">
+          <input type="checkbox" checked onchange="toggleSalesDisplay('cumulative', this.checked)">
+          <div class="legend-dot" style="background:#4361ee"></div>누적 매출
         </label>
       </div>
       <div class="legend" id="legend-personal" style="display:none">
@@ -1444,6 +1485,30 @@
     </div>
     <div class="login-error" id="daou-error"></div>
     <button class="btn-login" id="daou-login-btn" onclick="submitDaouLogin()">로그인</button>
+  </div>
+</div>
+
+<!-- Sales 날짜 팝업 -->
+<div id="sales-day-popup" style="display:none; position:fixed; inset:0; z-index:300; background:rgba(0,0,0,0.35);" onclick="closeSalesDayPopup()">
+  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--surface); border-radius:12px; padding:20px 24px; min-width:220px; box-shadow:0 8px 32px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <span id="sales-popup-date" style="font-size:15px; font-weight:700; color:var(--text-primary)"></span>
+      <button onclick="closeSalesDayPopup()" style="border:none; background:none; font-size:18px; cursor:pointer; color:var(--text-muted); line-height:1;">×</button>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:24px;">
+        <span style="font-size:13px; color:var(--text-muted);">매출</span>
+        <span id="sales-popup-sales" style="font-size:15px; font-weight:700; color:#48bb78;"></span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:24px;">
+        <span style="font-size:13px; color:var(--text-muted);">반품</span>
+        <span id="sales-popup-returns" style="font-size:15px; font-weight:700; color:#fc8181;"></span>
+      </div>
+      <div style="border-top:1px solid var(--border); padding-top:10px; display:flex; justify-content:space-between; align-items:center; gap:24px;">
+        <span style="font-size:13px; font-weight:600; color:var(--text-primary);">순매출</span>
+        <span id="sales-popup-net" style="font-size:15px; font-weight:700; color:#4361ee;"></span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1647,6 +1712,31 @@
   const teamChipMap     = ['chip-company', 'chip-meeting', 'chip-vacation'];
   const personalChipMap = ['chip-company', 'chip-work', 'chip-personal', 'chip-vacation'];
   let currentView = 'team';
+  let salesData = {};
+  let returnsData = {};
+  let salesDisplayState = { daily: true, cumulative: true };
+
+  function toggleSalesDisplay(type, checked) {
+    salesDisplayState[type] = checked;
+    renderGrid(curYear, curMonth, []);
+  }
+
+  function openSalesDayPopup(dateStr) {
+    const sales = salesData[dateStr] || 0;
+    const ret   = returnsData[dateStr] || 0;
+    const net   = sales - ret;
+    const fmt = v => (v / 100000000).toFixed(2) + '억';
+    const [y, m, d] = dateStr.split('-');
+    document.getElementById('sales-popup-date').textContent = `${parseInt(m)}월 ${parseInt(d)}일`;
+    document.getElementById('sales-popup-sales').textContent   = fmt(sales);
+    document.getElementById('sales-popup-returns').textContent = fmt(ret);
+    document.getElementById('sales-popup-net').textContent     = fmt(net);
+    document.getElementById('sales-day-popup').style.display = '';
+  }
+
+  function closeSalesDayPopup() {
+    document.getElementById('sales-day-popup').style.display = 'none';
+  }
 
   const today = new Date();
   let curYear  = today.getFullYear();
@@ -1673,16 +1763,22 @@
 
   function applyCurrentView() {
     const state = loadState();
-    if (currentView === 'team') {
+    if (currentView === 'sales') {
+      document.getElementById('legend-team').style.display = 'none';
+      document.getElementById('legend-personal').style.display = 'none';
+      document.getElementById('legend-sales').style.display = '';
+    } else if (currentView === 'team') {
       const cbs = document.querySelectorAll('#legend-team input[type="checkbox"]');
       teamChipMap.forEach((cls, i) => { cbs[i].checked = state.team[i]; });
       document.getElementById('legend-team').style.display = '';
       document.getElementById('legend-personal').style.display = 'none';
+      document.getElementById('legend-sales').style.display = 'none';
     } else {
       const cbs = document.querySelectorAll('#legend-personal input[type="checkbox"]');
       personalChipMap.forEach((cls, i) => { cbs[i].checked = state.personal[i]; });
       document.getElementById('legend-team').style.display = 'none';
       document.getElementById('legend-personal').style.display = '';
+      document.getElementById('legend-sales').style.display = 'none';
     }
   }
 
@@ -1765,6 +1861,15 @@
       ? `repeat(${totalRows}, minmax(112px, auto))`
       : `repeat(${totalRows}, minmax(146px, 1fr))`;
 
+    // Sales 누적 매출 사전 계산
+    const cumulativeMap = {};
+    if (currentView === 'sales') {
+      const monthPrefix = `${year}-${pad(month+1)}`;
+      let running = 0;
+      Object.keys(salesData).filter(d => d.startsWith(monthPrefix)).sort()
+        .forEach(d => { running += salesData[d]; cumulativeMap[d] = running; });
+    }
+
     for (let i = 0; i < totalRows * 7; i++) {
       const cell = document.createElement('div');
       cell.className = 'day-cell';
@@ -1806,6 +1911,25 @@
         badge.className = 'holiday-badge';
         badge.textContent = HOLIDAYS[dateStr];
         cell.appendChild(badge);
+      }
+
+      if (currentView === 'sales') {
+        cell.addEventListener('click', () => openSalesDayPopup(dateStr));
+        cell.style.cursor = 'pointer';
+        if (salesDisplayState.daily && salesData[dateStr] != null) {
+          const amtEl = document.createElement('div');
+          amtEl.className = 'sales-daily';
+          amtEl.textContent = (salesData[dateStr] / 100000000).toFixed(1) + '억';
+          cell.appendChild(amtEl);
+        }
+        if (salesDisplayState.cumulative && cumulativeMap[dateStr] != null) {
+          const cumEl = document.createElement('div');
+          cumEl.className = 'sales-cumulative';
+          cumEl.textContent = (cumulativeMap[dateStr] / 100000000).toFixed(1) + '억';
+          cell.appendChild(cumEl);
+        }
+        grid.appendChild(cell);
+        continue;
       }
 
       const activeTypes = getActiveTypes();
@@ -1898,10 +2022,84 @@
     return new Set(map.filter((_, i) => stateArr[i]));
   }
 
+  async function loadSalesData(year, month) {
+    const first = `${year}-${pad(month+1)}-01`;
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const last = `${year}-${pad(month+1)}-${pad(lastDay)}`;
+    const { data } = await sb.from('sales_data').select('sale_date,amount,returns')
+      .gte('sale_date', first).lte('sale_date', last);
+    salesData = {}; returnsData = {};
+    (data || []).forEach(r => { salesData[r.sale_date] = r.amount; returnsData[r.sale_date] = r.returns || 0; });
+    // 데이터 없을 때 미리보기용 샘플 (실제 업로드 시 자동 교체)
+    if (Object.keys(salesData).length === 0) {
+      const p = `${year}-${pad(month+1)}`;
+      const samples = [
+        [2,1050000000,82000000],[3,870000000,45000000],[4,1320000000,103000000],[5,940000000,61000000],
+        [9,1180000000,74000000],[10,760000000,38000000],[11,1450000000,95000000],[12,1090000000,57000000],[13,830000000,42000000],
+        [16,1310000000,88000000],[17,680000000,31000000],[18,1570000000,112000000],[19,920000000,66000000],[20,1140000000,79000000],
+        [23,890000000,48000000],[24,1480000000,97000000],[25,1260000000,83000000],[26,1030000000,55000000],[27,750000000,36000000],
+        [30,1190000000,71000000]
+      ];
+      samples.forEach(([d, amt, ret]) => {
+        const ds = `${p}-${pad(d)}`;
+        if (new Date(ds) <= new Date(last)) { salesData[ds] = amt; returnsData[ds] = ret; }
+      });
+    }
+  }
+
+  async function handleSalesUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    input.value = '';
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+    const dailySales = {}, dailyReturns = {};
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      const gubun = row[5];
+      const docNo = row[6];
+      const amount = row[10];
+      if (!docNo || amount == null) continue;
+      const ds = String(docNo).replace(/\D/g, '').slice(0, 8);
+      if (ds.length !== 8) continue;
+      const dateStr = `${ds.slice(0,4)}-${ds.slice(4,6)}-${ds.slice(6,8)}`;
+      const amt = Math.abs(Number(amount));
+      if (gubun === '반품') dailyReturns[dateStr] = (dailyReturns[dateStr] || 0) + amt;
+      else dailySales[dateStr] = (dailySales[dateStr] || 0) + amt;
+    }
+    const allDates = new Set([...Object.keys(dailySales), ...Object.keys(dailyReturns)]);
+    const toInsert = [...allDates].map(sale_date => ({
+      sale_date,
+      amount: Math.round(dailySales[sale_date] || 0),
+      returns: Math.round(dailyReturns[sale_date] || 0),
+      updated_at: new Date().toISOString()
+    }));
+    if (!toInsert.length) { alert('데이터를 찾을 수 없습니다.'); return; }
+    const { error } = await sb.from('sales_data').upsert(toInsert, { onConflict: 'sale_date' });
+    if (error) { alert('업로드 실패: ' + error.message); return; }
+    alert(`${toInsert.length}일 매출 데이터 업로드 완료`);
+    await loadSalesData(curYear, curMonth);
+    renderGrid(curYear, curMonth, []);
+  }
+
   async function loadAndRender(year, month) {
     const first = `${year}-${pad(month+1)}-01`;
     const lastDay = new Date(year, month + 1, 0).getDate();
     const last  = `${year}-${pad(month+1)}-${pad(lastDay)}`;
+
+    if (currentView === 'sales') {
+      await loadSalesData(year, month);
+      applyCurrentView();
+      renderGrid(year, month, []);
+      document.getElementById('month-grid').style.display = '';
+      document.getElementById('mobile-day-section').style.display = 'none';
+      const calLegend = document.getElementById('mobile-cal-legend');
+      if (calLegend) { calLegend.style.display = isMobile() ? '' : 'none'; updateMobileLegend(); }
+      renderMiniCal(year, month);
+      return;
+    }
 
     const [leaveRes, evRes] = await Promise.all([
       sb.from('leave_records').select('*')
@@ -1969,6 +2167,18 @@
   function updateMobileLegend() {
     const row = document.getElementById('mobile-cal-legend');
     if (!row) return;
+    if (currentView === 'sales') {
+      row.innerHTML = `
+        <label class="legend-item">
+          <input type="checkbox" ${salesDisplayState.daily ? 'checked' : ''} onchange="toggleSalesDisplay('daily', this.checked)">
+          <div class="legend-dot" style="background:#48bb78"></div>당일 매출
+        </label>
+        <label class="legend-item">
+          <input type="checkbox" ${salesDisplayState.cumulative ? 'checked' : ''} onchange="toggleSalesDisplay('cumulative', this.checked)">
+          <div class="legend-dot" style="background:#4361ee"></div>누적 매출
+        </label>`;
+      return;
+    }
     const src = currentView === 'team'
       ? document.getElementById('legend-team')
       : document.getElementById('legend-personal');
@@ -2096,6 +2306,7 @@
     document.querySelectorAll('.view-toggle button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentView = view;
+    document.body.classList.toggle('sales-view', view === 'sales');
     loadAndRender(curYear, curMonth);
   }
 
