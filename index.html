@@ -488,8 +488,8 @@
       font-weight: 700;
       line-height: 1;
     }
-    .sales-daily     { bottom: 24px; font-size: 13px; color: #48bb78; }
-    .sales-cumulative{ bottom: 7px;  font-size: 11px; color: #4361ee; }
+    .sales-daily     { bottom: 38px; font-size: 24px; color: #48bb78; }
+    .sales-cumulative{ bottom: 7px;  font-size: 15px; color: var(--text-secondary); }
     .day-cell.other-month .sales-daily,
     .day-cell.other-month .sales-cumulative { color: var(--text-faint); }
     .desktop-upload-btn { display: none; background: #1e7e45 !important; }
@@ -1127,9 +1127,13 @@
       /* cal-nav 화살표 간격 */
       .cal-nav { gap:4px; }
       .cal-nav h2 { font-size:18px; width:auto; min-width:110px; }
+      /* 모바일 목록뷰: 타임라인 스크롤 영역을 192px(상단 오프셋) ~ 화면 끝까지로 확장 */
+      .day-timeline-wrap { max-height: calc(100vh - 196px); }
       /* 모바일 그리드: 셀 고정 크기 */
       .days-grid { grid-template-rows: repeat(6, minmax(0, 1fr)); }
       .day-cell { min-height:0; padding:3px; overflow:hidden; }
+      .sales-daily { bottom: 24px; font-size: 13px; }
+      .sales-cumulative { font-size: 9px; }
       .chips-wrap.clipped { max-height:68px; transition:max-height 0.4s ease-in-out; }
       .chip-more { font-size:9px; line-height:1.2; padding:0 2px; white-space:nowrap; touch-action:manipulation; }
       .event-chip { height:18px; font-size:10px; padding:0 4px; }
@@ -1188,8 +1192,11 @@
     body.simulate-mobile.sales-view .btn-view-mode { display:none !important; }
     body.simulate-mobile .cal-nav { gap:4px; }
     body.simulate-mobile .cal-nav h2 { font-size:18px; width:auto; min-width:110px; }
+    body.simulate-mobile .day-timeline-wrap { max-height: calc(100vh - 196px); }
     body.simulate-mobile .days-grid { grid-template-rows: repeat(6, minmax(0, 1fr)); }
     body.simulate-mobile .day-cell { min-height:0; padding:3px; overflow:hidden; }
+    body.simulate-mobile .sales-daily { bottom: 24px; font-size: 13px; }
+    body.simulate-mobile .sales-cumulative { font-size: 9px; }
     body.simulate-mobile .chips-wrap.clipped { max-height:68px; transition:max-height 0.4s ease-in-out; }
     body.simulate-mobile .chip-more { font-size:9px; line-height:1.2; padding:0 2px; white-space:nowrap; touch-action:manipulation; }
     body.simulate-mobile .event-chip { height:18px; font-size:10px; padding:0 4px; }
@@ -1314,7 +1321,7 @@
         </label>
         <label class="legend-item">
           <input type="checkbox" checked onchange="toggleSalesDisplay('cumulative', this.checked)">
-          <div class="legend-dot" style="background:#4361ee"></div>누적 매출
+          <div class="legend-dot" style="background:var(--text-secondary)"></div>누적 매출
         </label>
       </div>
       <div class="legend" id="legend-personal" style="display:none">
@@ -2178,7 +2185,7 @@
         </label>
         <label class="legend-item">
           <input type="checkbox" ${salesDisplayState.cumulative ? 'checked' : ''} onchange="toggleSalesDisplay('cumulative', this.checked)">
-          <div class="legend-dot" style="background:#4361ee"></div>누적 매출
+          <div class="legend-dot" style="background:var(--text-secondary)"></div>누적 매출
         </label>`;
       return;
     }
