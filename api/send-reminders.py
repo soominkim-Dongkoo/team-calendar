@@ -32,6 +32,8 @@ CRON_SECRET  = os.environ.get('CRON_SECRET', '')
 VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
 VAPID_SUBJECT     = os.environ.get('VAPID_SUBJECT', '')
 
+SLACK_ENABLED = False  # 웹 푸시 전환으로 Slack 알림 끊어둠. 필요 시 True로 복구.
+
 def _http_post(url, headers=None, data=None):
     body = json.dumps(data or {}).encode()
     req = urllib.request.Request(url, data=body, headers=headers or {}, method='POST')
@@ -167,11 +169,12 @@ class handler(BaseHTTPRequestHandler):
             print(f'[event] title={r.get("title")} is_team={r.get("is_team")} owner={owner} slack_id={user.get("slack_id")}')
 
             if r.get('is_team'):
-                send_slack(SLACK_CH, r, is_team=True)
+                if SLACK_ENABLED:
+                    send_slack(SLACK_CH, r, is_team=True)
                 subs = sb_get('push_subscriptions', [('select', '*')])
                 send_push(subs, r, is_team=True)
             else:
-                if user.get('slack_id'):
+                if SLACK_ENABLED and user.get('slack_id'):
                     send_slack(user['slack_id'], r, is_team=False)
                 subs = sb_get('push_subscriptions', [('select', '*'), ('user_id', f'eq.{owner}')])
                 send_push(subs, r, is_team=False)
