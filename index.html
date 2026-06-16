@@ -1252,7 +1252,7 @@
           <div class="avatar-menu-name" id="menu-name"></div>
           <div class="avatar-menu-team" id="menu-team"></div>
         </div>
-        <button class="avatar-menu-btn" onclick="enablePushNotifications()">🔔 알림 켜기</button>
+        <button class="avatar-menu-btn" id="push-toggle-btn" onclick="togglePushNotifications()">🔔 알림 켜기</button>
         <button class="avatar-menu-btn" onclick="logout()">로그아웃</button>
       </div>
     </div>
@@ -2269,7 +2269,9 @@
   }
 
   function toggleAvatarMenu() {
-    document.getElementById('avatar-menu').classList.toggle('open');
+    const menu = document.getElementById('avatar-menu');
+    menu.classList.toggle('open');
+    if (menu.classList.contains('open')) updatePushButtonLabel();
   }
 
   document.addEventListener('click', e => {
@@ -2314,6 +2316,29 @@
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 
+  async function getPushSubscription() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null;
+    const reg = await navigator.serviceWorker.ready;
+    return reg.pushManager.getSubscription();
+  }
+
+  async function updatePushButtonLabel() {
+    const btn = document.getElementById('push-toggle-btn');
+    if (!btn) return;
+    const sub = await getPushSubscription();
+    btn.textContent = sub ? '🔕 알림 끄기' : '🔔 알림 켜기';
+  }
+
+  async function togglePushNotifications() {
+    const sub = await getPushSubscription();
+    if (sub) {
+      await disablePushNotifications(sub);
+    } else {
+      await enablePushNotifications();
+    }
+    updatePushButtonLabel();
+  }
+
   async function enablePushNotifications() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       alert('이 브라우저는 푸시 알림을 지원하지 않습니다.');
@@ -2344,6 +2369,17 @@
     } catch (err) {
       console.error(err);
       alert('알림 설정에 실패했습니다.');
+    }
+  }
+
+  async function disablePushNotifications(sub) {
+    try {
+      await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+      await sub.unsubscribe();
+      alert('푸시 알림이 꺼졌습니다.');
+    } catch (err) {
+      console.error(err);
+      alert('알림 해제에 실패했습니다.');
     }
   }
 
