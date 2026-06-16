@@ -2310,6 +2310,7 @@
     btn.classList.add('active');
     currentView = view;
     document.body.classList.toggle('sales-view', view === 'sales');
+    window.scrollTo(0, 0);
     loadAndRender(curYear, curMonth);
   }
 
