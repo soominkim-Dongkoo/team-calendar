@@ -34,3 +34,29 @@ self.addEventListener('fetch', e => {
     caches.match(e.request).then(cached => cached || fetch(e.request))
   );
 });
+
+self.addEventListener('push', e => {
+  let data = {};
+  try { data = e.data.json(); } catch (err) {}
+  const title = data.title || '경영기획팀 캘린더';
+  const options = {
+    body: data.body || '',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    data: { url: data.url || '/' },
+  };
+  e.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window' }).then(clients => {
+      for (const client of clients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) return client.focus();
+      }
+      return self.clients.openWindow(url);
+    })
+  );
+});

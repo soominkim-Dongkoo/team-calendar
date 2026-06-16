@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Vercel Serverless Function — 알림 발송 (Slack)
+Vercel Serverless Function — 알림 발송 (Slack + 웹 푸시)
 GET /api/send-reminders
   - cron-job.org 에서 1분마다 호출
   - 헤더: x-cron-secret: {CRON_SECRET}
@@ -11,6 +11,8 @@ GET /api/send-reminders
   SLACK_BOT_TOKEN       Slack Bot OAuth 토큰 (xoxb-...)
   SLACK_TEAM_CHANNEL_ID 팀 채널 ID (예: C012AB3CD)
   CRON_SECRET           cron 호출 인증용 임의 문자열
+  VAPID_PRIVATE_KEY     웹 푸시 VAPID 개인키
+  VAPID_SUBJECT         웹 푸시 VAPID sub (예: mailto:team@example.com)
 """
 
 import json
@@ -20,11 +22,15 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler
 from datetime import datetime, timedelta, timezone
 
-SB_URL      = os.environ.get('SUPABASE_URL', '')
-SB_KEY      = os.environ.get('SUPABASE_SERVICE_KEY', '')
-SLACK_TOKEN = os.environ.get('SLACK_BOT_TOKEN', '')
-SLACK_CH    = os.environ.get('SLACK_TEAM_CHANNEL_ID', '')
-CRON_SECRET = os.environ.get('CRON_SECRET', '')
+from pywebpush import webpush, WebPushException
+
+SB_URL       = os.environ.get('SUPABASE_URL', '')
+SB_KEY       = os.environ.get('SUPABASE_SERVICE_KEY', '')
+SLACK_TOKEN  = os.environ.get('SLACK_BOT_TOKEN', '')
+SLACK_CH     = os.environ.get('SLACK_TEAM_CHANNEL_ID', '')
+CRON_SECRET  = os.environ.get('CRON_SECRET', '')
+VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
+VAPID_SUBJECT     = os.environ.get('VAPID_SUBJECT', '')
 
 def _http_post(url, headers=None, data=None):
     body = json.dumps(data or {}).encode()
@@ -70,6 +76,17 @@ def sb_patch(table, row_id, data):
         data=data,
     )
 
+def sb_delete(table, row_id):
+    req = urllib.request.Request(
+        f'{SB_URL}/rest/v1/{table}?id=eq.{row_id}',
+        headers=_sb_headers(),
+        method='DELETE',
+    )
+    try:
+        urllib.request.urlopen(req, timeout=10)
+    except Exception:
+        pass
+
 def _open_dm(user_id):
     result = _http_post(
         'https://slack.com/api/conversations.open',
@@ -96,6 +113,33 @@ def send_slack(channel, reminder, is_team):
         data={'channel': channel, 'text': text},
     )
     print(f'[slack] channel={channel} ok={result.get("ok")} error={result.get("error")}')
+
+def send_push(subscriptions, reminder, is_team):
+    if not VAPID_PRIVATE_KEY:
+        return
+    time_str = (reminder.get('start_time') or '')[:5] or '종일'
+    label = '팀 일정' if is_team else '개인 일정'
+    payload = json.dumps({
+        'title': f'🔔 {label} 알림',
+        'body': f'{reminder["title"]} · {reminder["start_date"]} {time_str}',
+        'url': '/',
+    }, ensure_ascii=False)
+    for sub in subscriptions:
+        try:
+            webpush(
+                subscription_info={
+                    'endpoint': sub['endpoint'],
+                    'keys': {'p256dh': sub['p256dh'], 'auth': sub['auth']},
+                },
+                data=payload,
+                vapid_private_key=VAPID_PRIVATE_KEY,
+                vapid_claims={'sub': VAPID_SUBJECT},
+            )
+        except WebPushException as ex:
+            status = ex.response.status_code if ex.response is not None else None
+            print(f'[push] failed endpoint={sub["endpoint"][:50]} status={status} error={ex}')
+            if status in (404, 410):
+                sb_delete('push_subscriptions', sub['id'])
 
 class handler(BaseHTTPRequestHandler):
 
@@ -124,8 +168,13 @@ class handler(BaseHTTPRequestHandler):
 
             if r.get('is_team'):
                 send_slack(SLACK_CH, r, is_team=True)
-            elif user.get('slack_id'):
-                send_slack(user['slack_id'], r, is_team=False)
+                subs = sb_get('push_subscriptions', [('select', '*')])
+                send_push(subs, r, is_team=True)
+            else:
+                if user.get('slack_id'):
+                    send_slack(user['slack_id'], r, is_team=False)
+                subs = sb_get('push_subscriptions', [('select', '*'), ('user_id', f'eq.{owner}')])
+                send_push(subs, r, is_team=False)
 
             sb_patch('manual_events', r['id'], {'reminder_sent_at': now.isoformat()})
             sent_titles.append(r.get('title', ''))
