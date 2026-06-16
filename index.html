@@ -1497,7 +1497,7 @@
     </div>
     <div style="display:flex; flex-direction:column; gap:10px;">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:24px;">
-        <span style="font-size:13px; color:var(--text-muted);">매출</span>
+        <span style="font-size:13px; color:var(--text-muted);">판매</span>
         <span id="sales-popup-sales" style="font-size:15px; font-weight:700; color:#48bb78;"></span>
       </div>
       <div style="display:flex; justify-content:space-between; align-items:center; gap:24px;">
@@ -1505,7 +1505,7 @@
         <span id="sales-popup-returns" style="font-size:15px; font-weight:700; color:#fc8181;"></span>
       </div>
       <div style="border-top:1px solid var(--border); padding-top:10px; display:flex; justify-content:space-between; align-items:center; gap:24px;">
-        <span style="font-size:13px; font-weight:600; color:var(--text-primary);">순매출</span>
+        <span style="font-size:13px; font-weight:600; color:var(--text-primary);">매출</span>
         <span id="sales-popup-net" style="font-size:15px; font-weight:700; color:#4361ee;"></span>
       </div>
     </div>
@@ -1724,7 +1724,7 @@
   function openSalesDayPopup(dateStr) {
     const sales = salesData[dateStr] || 0;
     const ret   = returnsData[dateStr] || 0;
-    const net   = sales - ret;
+    const net   = sales + ret;
     const fmt = v => (v / 100000000).toFixed(2) + '억';
     const [y, m, d] = dateStr.split('-');
     document.getElementById('sales-popup-date').textContent = `${parseInt(m)}월 ${parseInt(d)}일`;
