@@ -121,6 +121,37 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.15);
     }
 
+    .schedule-subtoggle {
+      display: flex;
+      background: var(--toggle-bg);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 2px;
+    }
+    #schedule-subtoggle { display: none; }
+    #schedule-subtoggle-hdr { margin-left: 16px; }
+
+    .schedule-subtoggle .sub-toggle-btn {
+      border: none;
+      background: transparent;
+      width: auto;
+      height: auto;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+
+    .schedule-subtoggle .sub-toggle-btn.active {
+      background: var(--surface);
+      color: #4361ee;
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+
     .header-right {
       display: flex;
       align-items: center;
@@ -1124,6 +1155,9 @@
       .logo-sub { display:block; }
       /* 캘린더 헤더 행 */
       .cal-header-row .legend { display:none !important; }
+      #schedule-subtoggle { display:flex; position:absolute; left:12px; top:50%; transform:translateY(-50%); padding:2px; gap:1px; }
+      #schedule-subtoggle-hdr { display:none; }
+      #schedule-subtoggle .sub-toggle-btn { font-size:10px; padding:3px 6px; }
       .cal-add-btn { display:inline-flex !important; padding:6px 12px; font-size:12px; }
       body.sales-view .cal-add-btn { display:inline-flex !important; visibility:hidden !important; }
       /* btn-view-mode → 헤더에 표시 */
@@ -1131,7 +1165,7 @@
       body.sales-view .btn-view-mode { display:none !important; }
       /* cal-nav 화살표 간격 */
       .cal-nav { gap:4px; }
-      .cal-nav h2 { font-size:18px; width:auto; min-width:110px; }
+      .cal-nav h2 { font-size:18px; width:auto; min-width:90px; }
       /* 모바일 목록뷰: 타임라인 스크롤 영역을 192px(상단 오프셋) ~ 화면 끝까지로 확장 */
       .day-timeline-wrap { max-height: calc(100vh - 196px); }
       /* 모바일 그리드: 셀 고정 크기 */
@@ -1191,12 +1225,15 @@
     body.simulate-mobile .logo-team { font-size:12px; }
     body.simulate-mobile .logo-sub { display:block; }
     body.simulate-mobile .cal-header-row .legend { display:none !important; }
+    body.simulate-mobile #schedule-subtoggle { display:flex; position:absolute; left:12px; top:50%; transform:translateY(-50%); padding:2px; gap:1px; }
+    body.simulate-mobile #schedule-subtoggle-hdr { display:none; }
+    body.simulate-mobile #schedule-subtoggle .sub-toggle-btn { font-size:10px; padding:3px 6px; }
     body.simulate-mobile .cal-add-btn { display:inline-flex !important; padding:6px 12px; font-size:12px; }
     body.simulate-mobile.sales-view .cal-add-btn { visibility:hidden !important; }
     body.simulate-mobile .btn-view-mode { display:inline-flex !important; align-items:center; gap:3px; font-size:11px; }
     body.simulate-mobile.sales-view .btn-view-mode { display:none !important; }
     body.simulate-mobile .cal-nav { gap:4px; }
-    body.simulate-mobile .cal-nav h2 { font-size:18px; width:auto; min-width:110px; }
+    body.simulate-mobile .cal-nav h2 { font-size:18px; width:auto; min-width:90px; }
     body.simulate-mobile .day-timeline-wrap { max-height: calc(100vh - 196px); }
     body.simulate-mobile .days-grid { grid-template-rows: repeat(6, minmax(0, 1fr)); }
     body.simulate-mobile .day-cell { min-height:0; padding:3px; overflow:hidden; }
@@ -1239,9 +1276,12 @@
     </div>
   </div>
   <div class="view-toggle">
-    <button class="active" onclick="setView('team', this)">Team</button>
-    <button onclick="setView('personal', this)">My</button>
-    <button onclick="setView('sales', this)">Sales</button>
+    <button class="active" data-view="schedule" onclick="setView('schedule')">Schedule</button>
+    <button data-view="sales" onclick="setView('sales')">Sales</button>
+  </div>
+  <div id="schedule-subtoggle-hdr" class="schedule-subtoggle" style="display:none">
+    <button class="sub-toggle-btn active" data-src="team" onclick="toggleScheduleSource('team', this)">Team</button>
+    <button class="sub-toggle-btn active" data-src="personal" onclick="toggleScheduleSource('personal', this)">My</button>
   </div>
   <div class="header-right">
     <button class="btn-view-mode" id="btn-view-mode" onclick="toggleMobileView()">⊞ 그리드</button>
@@ -1306,17 +1346,21 @@
   <div class="calendar-area">
 
     <div class="cal-header-row" style="display:flex; align-items:center; justify-content:space-between; position:relative;">
-      <div class="legend" id="legend-team">
-        <label class="legend-item">
-          <input type="checkbox" checked onchange="toggleChip('chip-company', this, 'team')">
+      <div class="legend" id="legend-schedule">
+        <label class="legend-item" data-src="both">
+          <input type="checkbox" checked onchange="toggleChip('chip-company', this)">
           <div class="legend-dot" style="background:#dd6b20"></div>전사 회의
         </label>
-        <label class="legend-item">
-          <input type="checkbox" checked onchange="toggleChip('chip-meeting', this, 'team')">
-          <div class="legend-dot" style="background:#38a169"></div>팀 회의
+        <label class="legend-item" data-src="team">
+          <input type="checkbox" checked onchange="toggleChip('chip-meeting', this)">
+          <div class="legend-dot" style="background:#38a169"></div>팀
         </label>
-        <label class="legend-item">
-          <input type="checkbox" checked onchange="toggleChip('chip-vacation', this, 'team')">
+        <label class="legend-item" data-src="my">
+          <input type="checkbox" checked onchange="toggleChip('chip-personal', this)">
+          <div class="legend-dot" style="background:#b794f4"></div>개인
+        </label>
+        <label class="legend-item" data-src="both">
+          <input type="checkbox" checked onchange="toggleChip('chip-vacation', this)">
           <div class="legend-dot" style="background:#718096"></div>휴가
         </label>
       </div>
@@ -1330,23 +1374,9 @@
           <div class="legend-dot" style="background:var(--text-secondary)"></div>누적 매출
         </label>
       </div>
-      <div class="legend" id="legend-personal" style="display:none">
-        <label class="legend-item">
-          <input type="checkbox" checked onchange="toggleChip('chip-company', this, 'personal')">
-          <div class="legend-dot" style="background:#dd6b20"></div>전사 회의
-        </label>
-        <label class="legend-item">
-          <input type="checkbox" checked onchange="toggleChip('chip-work', this, 'personal')">
-          <div class="legend-dot" style="background:#68d391"></div>업무
-        </label>
-        <label class="legend-item">
-          <input type="checkbox" checked onchange="toggleChip('chip-personal', this, 'personal')">
-          <div class="legend-dot" style="background:#b794f4"></div>개인 일정
-        </label>
-        <label class="legend-item">
-          <input type="checkbox" checked onchange="toggleChip('chip-vacation', this, 'personal')">
-          <div class="legend-dot" style="background:#718096"></div>휴가
-        </label>
+      <div class="schedule-subtoggle" id="schedule-subtoggle">
+        <button class="sub-toggle-btn active" data-src="team" onclick="toggleScheduleSource('team', this)">Team</button>
+        <button class="sub-toggle-btn active" data-src="personal" onclick="toggleScheduleSource('personal', this)">My</button>
       </div>
       <div class="cal-nav" style="position:absolute; left:50%; transform:translateX(-50%);">
         <button onclick="moveMonth(-1)">‹</button>
@@ -1514,7 +1544,7 @@
     <div style="display:flex; flex-direction:column; gap:10px;">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:24px;">
         <span style="font-size:13px; color:var(--text-muted);">판매</span>
-        <span id="sales-popup-sales" style="font-size:15px; font-weight:700; color:#48bb78;"></span>
+        <span id="sales-popup-sales" style="font-size:15px; font-weight:700; color:#4361ee;"></span>
       </div>
       <div style="display:flex; justify-content:space-between; align-items:center; gap:24px;">
         <span style="font-size:13px; color:var(--text-muted);">반품</span>
@@ -1522,7 +1552,7 @@
       </div>
       <div style="border-top:1px solid var(--border); padding-top:10px; display:flex; justify-content:space-between; align-items:center; gap:24px;">
         <span style="font-size:13px; font-weight:600; color:var(--text-primary);">매출</span>
-        <span id="sales-popup-net" style="font-size:15px; font-weight:700; color:#4361ee;"></span>
+        <span id="sales-popup-net" style="font-size:15px; font-weight:700; color:#48bb78;"></span>
       </div>
     </div>
   </div>
@@ -1543,13 +1573,12 @@
       <div class="custom-select" id="ev-type-select">
         <div class="custom-select-display" onclick="toggleTypeDropdown()">
           <span class="type-badge" id="ev-type-badge">Team</span>
-          <span id="ev-type-label">팀 회의</span>
+          <span id="ev-type-label">팀</span>
           <span class="custom-select-arrow">▾</span>
         </div>
         <div class="custom-select-dropdown">
-          <div class="custom-select-option selected" data-value="meeting"><span class="type-badge">Team</span>팀 회의</div>
-          <div class="custom-select-option" data-value="work"><span class="type-badge">My</span>업무</div>
-          <div class="custom-select-option" data-value="personal"><span class="type-badge">My</span>개인 일정</div>
+          <div class="custom-select-option selected" data-value="meeting"><span class="type-badge">Team</span>팀</div>
+          <div class="custom-select-option" data-value="personal"><span class="type-badge">My</span>개인</div>
         </div>
       </div>
       <input type="hidden" id="ev-type" value="meeting" />
@@ -1725,9 +1754,8 @@
   }
   // ──────────────────────────────────────────────────────────
 
-  const teamChipMap     = ['chip-company', 'chip-meeting', 'chip-vacation'];
-  const personalChipMap = ['chip-company', 'chip-work', 'chip-personal', 'chip-vacation'];
-  let currentView = 'team';
+  const scheduleChipMap = ['chip-company', 'chip-meeting', 'chip-personal', 'chip-vacation'];
+  let currentView = 'schedule';
   let salesData = {};
   let returnsData = {};
   let salesDisplayState = { daily: true, cumulative: true };
@@ -1771,8 +1799,9 @@
   }
 
   function loadState() {
-    try { return JSON.parse(localStorage.getItem('calViewState')) || { team: [true, true, true], personal: [true, true, true, true] }; }
-    catch { return { team: [true, true, true], personal: [true, true, true, true] }; }
+    const def = { schedule: [true, true, true, true], scheduleSrc: [true, true] };
+    try { return { ...def, ...(JSON.parse(localStorage.getItem('calViewState')) || {}) }; }
+    catch { return def; }
   }
 
   function saveState(s) { localStorage.setItem('calViewState', JSON.stringify(s)); }
@@ -1780,21 +1809,19 @@
   function applyCurrentView() {
     const state = loadState();
     if (currentView === 'sales') {
-      document.getElementById('legend-team').style.display = 'none';
-      document.getElementById('legend-personal').style.display = 'none';
+      document.getElementById('legend-schedule').style.display = 'none';
       document.getElementById('legend-sales').style.display = '';
-    } else if (currentView === 'team') {
-      const cbs = document.querySelectorAll('#legend-team input[type="checkbox"]');
-      teamChipMap.forEach((cls, i) => { cbs[i].checked = state.team[i]; });
-      document.getElementById('legend-team').style.display = '';
-      document.getElementById('legend-personal').style.display = 'none';
-      document.getElementById('legend-sales').style.display = 'none';
+      document.querySelectorAll('.schedule-subtoggle').forEach(el => { el.style.display = 'none'; });
     } else {
-      const cbs = document.querySelectorAll('#legend-personal input[type="checkbox"]');
-      personalChipMap.forEach((cls, i) => { cbs[i].checked = state.personal[i]; });
-      document.getElementById('legend-team').style.display = 'none';
-      document.getElementById('legend-personal').style.display = '';
+      const cbs = document.querySelectorAll('#legend-schedule input[type="checkbox"]');
+      scheduleChipMap.forEach((cls, i) => { cbs[i].checked = state.schedule[i]; });
+      document.getElementById('legend-schedule').style.display = '';
       document.getElementById('legend-sales').style.display = 'none';
+      document.querySelectorAll('.schedule-subtoggle').forEach(el => { el.style.display = ''; });
+      document.querySelectorAll('.schedule-subtoggle .sub-toggle-btn').forEach(btn => {
+        btn.classList.toggle('active', state.scheduleSrc[btn.dataset.src === 'team' ? 0 : 1]);
+      });
+      updateLegendBySource();
     }
   }
 
@@ -1883,7 +1910,7 @@
       const monthPrefix = `${year}-${pad(month+1)}`;
       let running = 0;
       Object.keys(salesData).filter(d => d.startsWith(monthPrefix)).sort()
-        .forEach(d => { running += salesData[d]; cumulativeMap[d] = running; });
+        .forEach(d => { running += salesData[d] - (returnsData[d] || 0); cumulativeMap[d] = running; });
     }
 
     for (let i = 0; i < totalRows * 7; i++) {
@@ -1935,7 +1962,7 @@
         if (salesDisplayState.daily && salesData[dateStr] != null) {
           const amtEl = document.createElement('div');
           amtEl.className = 'sales-daily';
-          amtEl.textContent = (salesData[dateStr] / 100000000).toFixed(1) + '억';
+          amtEl.textContent = ((salesData[dateStr] - (returnsData[dateStr] || 0)) / 100000000).toFixed(1) + '억';
           cell.appendChild(amtEl);
         }
         if (salesDisplayState.cumulative && cumulativeMap[dateStr] != null) {
@@ -1949,17 +1976,10 @@
       }
 
       const activeTypes = getActiveTypes();
-      const dayEvents = (eventMap[dateStr] || []).filter(r => {
+      const dayEvents = dedupSchedule((eventMap[dateStr] || []).filter(r => {
         if (!activeTypes.has(r._chipClass)) return false;
-        if (r._source === 'leave') {
-          if (EXCLUDED_NAMES.has(r.name)) return false;
-          if (currentView === 'personal') return r.name === currentUser?.name;
-          return true;
-        } else {
-          if (currentView === 'team') return r.is_team === true;
-          return !r.is_team && r.owner === currentUser?.user_id;
-        }
-      });
+        return scheduleSourcePredicate(r);
+      }));
       const sorted = sortEvents(dayEvents);
 
       const makeChip = r => {
@@ -2033,9 +2053,7 @@
 
   function getActiveTypes() {
     const state = loadState();
-    const map = currentView === 'team' ? teamChipMap : personalChipMap;
-    const stateArr = currentView === 'team' ? state.team : state.personal;
-    return new Set(map.filter((_, i) => stateArr[i]));
+    return new Set(scheduleChipMap.filter((_, i) => state.schedule[i]));
   }
 
   async function loadSalesData(year, month) {
@@ -2064,6 +2082,7 @@
   }
 
   async function handleSalesUpload(input) {
+    if (!currentUser?.is_admin) return;
     const file = input.files[0];
     if (!file) return;
     input.value = '';
@@ -2195,16 +2214,26 @@
         </label>`;
       return;
     }
-    const src = currentView === 'team'
-      ? document.getElementById('legend-team')
-      : document.getElementById('legend-personal');
-    row.innerHTML = src ? src.innerHTML : '';
-    if (!_mobileGrid) row.querySelectorAll('label').forEach(l => { if (l.textContent.includes('휴가')) l.remove(); });
-    // innerHTML 복사는 HTML 속성(초기값)만 복사 → 현재 상태를 localStorage에서 동기화
     const state = loadState();
-    const stateArr = currentView === 'team' ? state.team : state.personal;
+    const src = document.getElementById('legend-schedule');
+    row.innerHTML = src ? src.innerHTML : '';
+    // innerHTML 복사는 HTML 속성(초기값)만 복사 → 현재 상태를 localStorage에서 동기화
     row.querySelectorAll('input[type="checkbox"]').forEach((cb, i) => {
-      if (i < stateArr.length) cb.checked = stateArr[i];
+      if (i < state.schedule.length) cb.checked = state.schedule[i];
+    });
+    updateLegendBySource();
+  }
+
+  function updateLegendBySource() {
+    const state = loadState();
+    const teamOn = state.scheduleSrc[0];
+    const myOn   = state.scheduleSrc[1];
+    ['#legend-schedule', '#mobile-cal-legend'].forEach(sel => {
+      document.querySelectorAll(`${sel} .legend-item[data-src]`).forEach(label => {
+        const s = label.dataset.src;
+        const visible = s === 'team' ? teamOn : s === 'my' ? myOn : (teamOn || myOn);
+        label.style.display = visible ? '' : 'none';
+      });
     });
   }
 
@@ -2271,6 +2300,8 @@
     } else {
       el.textContent = '?';
     }
+    const uploadBtn = document.querySelector('.desktop-upload-btn');
+    if (uploadBtn) uploadBtn.style.display = currentUser?.is_admin ? '' : 'none';
   }
 
   function toggleAvatarMenu() {
@@ -2402,25 +2433,31 @@
     updateAvatar();
   }
 
-  function setView(view, btn) {
-    document.querySelectorAll('.view-toggle button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+  function setView(view) {
+    document.querySelectorAll('.view-toggle button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
     currentView = view;
     document.body.classList.toggle('sales-view', view === 'sales');
     window.scrollTo(0, 0);
     loadAndRender(curYear, curMonth);
   }
 
-  function toggleChip(cls, checkbox, view) {
+  function toggleChip(cls, checkbox) {
     const state = loadState();
-    if (view === 'team') {
-      const idx = teamChipMap.indexOf(cls);
-      if (idx !== -1) state.team[idx] = checkbox.checked;
-    } else {
-      const idx = personalChipMap.indexOf(cls);
-      if (idx !== -1) state.personal[idx] = checkbox.checked;
-    }
+    const idx = scheduleChipMap.indexOf(cls);
+    if (idx !== -1) state.schedule[idx] = checkbox.checked;
     saveState(state);
+    renderGrid(curYear, curMonth, _cachedData);
+    if (_selectedDayStr) openDayView(_selectedDayStr);
+  }
+
+  function toggleScheduleSource(src, el) {
+    const state = loadState();
+    const idx = src === 'team' ? 0 : 1;
+    const newVal = el.tagName === 'INPUT' ? el.checked : !state.scheduleSrc[idx];
+    state.scheduleSrc[idx] = newVal;
+    saveState(state);
+    document.querySelectorAll(`.schedule-subtoggle [data-src="${src}"]`).forEach(b => b.classList.toggle('active', newVal));
+    updateMobileLegend();
     renderGrid(curYear, curMonth, _cachedData);
     if (_selectedDayStr) openDayView(_selectedDayStr);
   }
@@ -2437,12 +2474,40 @@
   }
 
 
-  const CHIP_TYPE_ORDER_TEAM = { 'chip-company': 0, 'chip-meeting': 1, 'chip-vacation': 2, 'chip-personal': 3 };
-  const CHIP_TYPE_ORDER_MY   = { 'chip-company': 0, 'chip-vacation': 1, 'chip-work': 2, 'chip-personal': 3 };
+  const CHIP_TYPE_ORDER_SCHEDULE = { 'chip-company': 0, 'chip-meeting': 1, 'chip-personal': 2, 'chip-vacation': 3 };
   const NAME_ORDER = { '황유준': 0, '김수민': 1, '김경수': 2 };
   const EXCLUDED_NAMES = new Set(['정힘찬']);
+
+  // Schedule 뷰의 Team/My 소스 토글에 따라 일정 포함 여부 판단
+  function scheduleSourcePredicate(r) {
+    const state = loadState();
+    const srcTeam = state.scheduleSrc[0];
+    const srcPersonal = state.scheduleSrc[1];
+    if (r._source === 'leave') {
+      if (EXCLUDED_NAMES.has(r.name)) return false;
+      if (srcTeam) return true; // Team 소스 선택 시 전체 휴가자 표시 (My의 부분집합)
+      return srcPersonal && r.name === currentUser?.name;
+    }
+    if (r.is_team) return srcTeam;
+    return srcPersonal && r.owner === currentUser?.user_id;
+  }
+
+  // Team 일정과 그 "내 일정에 추가" 복사본이 동시에 보이는 경우 복사본을 제거(하나만 표시)
+  function dedupSchedule(records) {
+    const teamKeys = new Set(records
+      .filter(r => r._source === 'event' && r.is_team)
+      .map(r => `${r.event_type}|${r.title}|${r.start_date}|${r.end_date}`));
+    return records.filter(r => {
+      if (r._source === 'event' && !r.is_team) {
+        const key = `${r.event_type}|${r.title}|${r.start_date}|${r.end_date}`;
+        if (teamKeys.has(key)) return false;
+      }
+      return true;
+    });
+  }
+
   function sortEvents(events) {
-    const order = currentView === 'team' ? CHIP_TYPE_ORDER_TEAM : CHIP_TYPE_ORDER_MY;
+    const order = CHIP_TYPE_ORDER_SCHEDULE;
     return [...events].sort((a, b) => {
       const ta = order[a._chipClass] ?? 99;
       const tb = order[b._chipClass] ?? 99;
@@ -2458,7 +2523,6 @@
     'chip-vacation': '#718096',
     'chip-company':  '#dd6b20',
     'chip-meeting':  '#38a169',
-    'chip-work':     '#48bb78',
     'chip-personal': '#9f7aea',
   };
 
@@ -2496,7 +2560,7 @@
 
     // 해당 날짜 일정 필터 (currentView + activeTypes 적용)
     const activeTypes = getActiveTypes();
-    const all = (_cachedData || []).filter(r => {
+    const all = dedupSchedule((_cachedData || []).filter(r => {
       if (r._source === 'leave') return false;
       if (r.start_date > dateStr || r.end_date < dateStr) return false;
       if (!activeTypes.has(r._chipClass)) return false;
@@ -2505,10 +2569,9 @@
         if (currentView === 'personal') return r.name === currentUser?.name;
         return true;
       } else {
-        if (currentView === 'team') return r.is_team === true;
-        return !r.is_team && r.owner === currentUser?.user_id;
+        return scheduleSourcePredicate(r);
       }
-    });
+    }));
 
     // 종일 vs 시간 있는 일정 분리
     const allDay = [], timed = [];
@@ -2758,8 +2821,8 @@
       }
     }
 
-    // 내 일정에 추가 버튼 (팀 뷰 전사 회의에서만, My 복사본에서는 숨김)
-    const showAddMy = isCompany && r.is_team && currentView === 'team';
+    // 내 일정에 추가 버튼 (전사 회의에서만, My 복사본에서는 숨김)
+    const showAddMy = isCompany && r.is_team;
     document.getElementById('detail-add-my-row').style.display = showAddMy ? '' : 'none';
     document.getElementById('detail-add-my-btn').style.display = showAddMy ? 'inline-flex' : 'none';
 
@@ -3191,9 +3254,9 @@
   }
 
   const _TYPE_META = {
-    meeting:  { badge: 'Team', label: '팀 회의' },
+    meeting:  { badge: 'Team', label: '팀' },
     work:     { badge: 'My',   label: '업무' },
-    personal: { badge: 'My',   label: '개인 일정' },
+    personal: { badge: 'My',   label: '개인' },
   };
 
   function setEvType(val) {
