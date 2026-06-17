@@ -61,6 +61,10 @@ class handler(BaseHTTPRequestHandler):
                 f"&toDate={date}T23:59:59.000%2B09:00",
                 headers=_H
             )
+            if cookie and 'application/json' not in r.headers.get('Content-Type', ''):
+                # 세션 만료 시 다우오피스가 로그인 페이지(HTML)를 응답함
+                self._respond(401, {'error': '다우오피스 세션이 만료되었습니다. 다시 로그인해주세요.'})
+                return
             all_items = r.json().get('data', []) if r.status_code == 200 else []
             result = []
             for item in all_items:

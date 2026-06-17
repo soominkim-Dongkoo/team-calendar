@@ -56,6 +56,10 @@ def _to_kst(s: str) -> str:
     return s[:19] + '.000+09:00'
 
 
+class SessionExpiredError(Exception):
+    pass
+
+
 def _create(sess: requests.Session, room: str, title: str, start: str, end: str) -> int:
     info = ROOM_MAP.get(room)
     if not info:
@@ -78,7 +82,11 @@ def _create(sess: requests.Session, room: str, title: str, start: str, end: str)
         raise RuntimeError(f'해당 시간에 이미 예약이 있습니다 ({room})')
     if r.status_code != 200:
         raise RuntimeError(f'예약 실패 ({r.status_code}): {r.text[:100]}')
-    return r.json()['data']['id']
+    try:
+        return r.json()['data']['id']
+    except (ValueError, KeyError):
+        # 세션 만료 시 다우오피스가 로그인 페이지(HTML)를 200으로 응답함
+        raise SessionExpiredError()
 
 
 def _delete(sess: requests.Session, reservation_id: int) -> None:
@@ -125,6 +133,8 @@ class handler(BaseHTTPRequestHandler):
             sess = _get_session(cookie)
             rid = _create(sess, req['room'], req['title'], req['start'], req['end'])
             self._ok({'ok': True, 'reservation_id': rid})
+        except SessionExpiredError:
+            self._err(401, '다우오피스 세션이 만료되었습니다. 다시 로그인해주세요.')
         except (ValueError, RuntimeError) as e:
             self._err(502, str(e))
         except Exception as e:
@@ -143,6 +153,8 @@ class handler(BaseHTTPRequestHandler):
                 _delete(sess, int(old_id))
             new_id = _create(sess, req['room'], req['title'], req['start'], req['end'])
             self._ok({'ok': True, 'reservation_id': new_id})
+        except SessionExpiredError:
+            self._err(401, '다우오피스 세션이 만료되었습니다. 다시 로그인해주세요.')
         except (ValueError, RuntimeError) as e:
             self._err(502, str(e))
         except Exception as e:

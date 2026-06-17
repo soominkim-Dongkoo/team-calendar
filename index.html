@@ -3198,9 +3198,20 @@
     panel.style.display = 'flex';
     _positionAvailPanel();
 
+    await _fetchAvailability(date, room, body, true);
+  }
+
+  async function _fetchAvailability(date, room, body, allowRetry) {
     try {
       const url = `${RESERVE_BASE}/api/availability?date=${date}&room=${encodeURIComponent(room)}`;
       const res = await fetch(url, { headers: _daouHeaders() });
+
+      if (res.status === 401 && allowRetry) {
+        _daouSession = null; localStorage.removeItem('daouSession');
+        showDaouLogin(() => _fetchAvailability(date, room, body, false));
+        return;
+      }
+
       const json = await res.json();
       const list = json.data || [];
 
