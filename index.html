@@ -1340,7 +1340,7 @@
     <button class="sub-toggle-btn active" data-src="personal" onclick="toggleScheduleSource('personal', this)">My</button>
   </div>
   <div class="header-right">
-    <button class="btn-view-mode" id="btn-view-mode" onclick="toggleMobileView()">⊞ 그리드</button>
+    <button class="btn-view-mode" id="btn-view-mode" onclick="toggleMobileView()">☰ 목록</button>
     <button class="btn-dark btn-admin-settings" id="btn-admin-settings" onclick="openAdminSettings()" title="관리자 설정" style="display:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49.98c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98L4.95 5.07c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-.98c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49.98c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg></button>
     <button class="btn-dark btn-simulate-mobile" id="btn-simulate-mobile" onclick="toggleSimulateMobile()" title="모바일 레이아웃 미리보기">📱</button>
     <button class="btn-dark" id="darkToggle" onclick="toggleDark()" title="다크모드 전환">🌙</button>
@@ -2126,16 +2126,16 @@
   const EVENT_TYPE_CHIP = { company: 'chip-company', meeting: 'chip-meeting', work: 'chip-work', personal: 'chip-personal' };
 
   let _cachedData = [];
-  let _mobileGrid = false;
+  let _mobileGrid = true;
   let _forceMobile = false;
   function isMobile() { return _forceMobile || window.innerWidth <= 768; }
 
   function toggleSimulateMobile() {
     _forceMobile = !_forceMobile;
-    _mobileGrid = false;
+    _mobileGrid = true;
     document.body.classList.toggle('simulate-mobile', _forceMobile);
     document.getElementById('btn-simulate-mobile').textContent = _forceMobile ? '🖥' : '📱';
-    document.getElementById('btn-view-mode').textContent = '⊞ 그리드';
+    document.getElementById('btn-view-mode').textContent = '☰ 목록';
     const legend = document.getElementById('mobile-cal-legend');
     if (legend) legend.style.display = _forceMobile ? '' : 'none';
     loadAndRender(curYear, curMonth);
