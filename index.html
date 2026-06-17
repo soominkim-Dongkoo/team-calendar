@@ -529,6 +529,60 @@
     .day-cell.other-month .sales-daily,
     .day-cell.other-month .sales-cumulative { color: var(--text-faint); }
     .desktop-upload-btn { display: none; background: #1e7e45 !important; }
+    .btn-admin-settings { font-size: 16px; }
+
+    /* ── 관리자 설정 패널 ── */
+    #admin-settings-overlay { display:none; position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,0.45); }
+    .admin-settings-panel { position:absolute; top:0; right:0; bottom:0; width:680px; max-width:100vw; background:var(--surface); display:flex; flex-direction:column; box-shadow:-4px 0 24px rgba(0,0,0,0.18); }
+    .admin-settings-hdr { display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--surface); z-index:1; }
+    .admin-settings-hdr h2 { font-size:17px; font-weight:700; margin:0; }
+    .admin-settings-hdr button { border:none; background:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1; }
+    .settings-tabs { display:flex; border-bottom:1px solid var(--border); padding:0 24px; }
+    .stab { padding:11px 18px; border:none; background:none; font-size:14px; font-weight:600; cursor:pointer; color:var(--text-muted); border-bottom:2px solid transparent; font-family:inherit; }
+    .stab.active { color:#4361ee; border-bottom-color:#4361ee; }
+    .settings-body { padding:24px; overflow-y:auto; flex:1; }
+    .settings-section-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin:0 0 14px; }
+    .stbl { width:100%; border-collapse:collapse; font-size:13px; }
+    .stbl th { text-align:left; padding:8px 10px; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); border-bottom:2px solid var(--border); white-space:nowrap; }
+    .stbl td { padding:9px 10px; border-bottom:1px solid var(--border-light); vertical-align:middle; }
+    .stbl input[type="text"],.stbl input[type="date"],.stbl input[type="password"] { border:1px solid var(--border); border-radius:6px; padding:5px 8px; font-size:13px; font-family:inherit; background:var(--surface); color:var(--text-primary); width:100%; box-sizing:border-box; }
+    .stbl input:focus { border-color:#4361ee; outline:none; }
+    .stbl input[type="checkbox"] { width:16px; height:16px; cursor:pointer; }
+    .btn-sadd { background:#4361ee; color:#fff; border:none; border-radius:8px; padding:8px 18px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+    .btn-sadd:hover { background:#3451d1; }
+    .btn-sdel { background:none; border:1px solid #fc8181; color:#fc8181; border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer; font-family:inherit; white-space:nowrap; }
+    .btn-sdel:hover { background:#fc8181; color:#fff; }
+    .btn-sact { background:none; border:1px solid var(--border); color:var(--text-secondary); border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer; font-family:inherit; white-space:nowrap; }
+    .btn-sact:hover { border-color:#4361ee; color:#4361ee; }
+    .btn-sact.unset { border-color:#fc8181; color:#fc8181; }
+    .btn-sact.unset:hover { background:#fc8181; color:#fff; }
+    .user-add-field { display:flex; align-items:flex-start; gap:14px; padding:11px 0; border-bottom:1px solid var(--border-light); }
+    .user-add-field label { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; width:72px; flex-shrink:0; padding-top:9px; letter-spacing:.03em; }
+    .user-add-field .uaf-val { flex:1; }
+    .user-add-field input[type="text"],.user-add-field input[type="password"] { width:100%; box-sizing:border-box; border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:13px; font-family:inherit; background:var(--bg); color:var(--text-primary); }
+    .user-add-field input:focus { border-color:#4361ee; outline:none; }
+    .folder-add-row { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+    .folder-add-row input { border:1px solid var(--border); border-radius:8px; padding:7px 10px; font-size:13px; font-family:inherit; background:var(--bg); color:var(--text-primary); }
+    .folder-add-row input:focus { border-color:#4361ee; outline:none; }
+    .btn-folder-add { background:none; border:1px dashed var(--border); color:var(--text-muted); border-radius:8px; padding:6px 14px; font-size:12px; cursor:pointer; font-family:inherit; margin-top:2px; }
+    .btn-folder-add:hover { border-color:#4361ee; color:#4361ee; }
+    .btn-folder-del { background:none; border:none; color:var(--text-muted); font-size:18px; line-height:1; cursor:pointer; padding:3px 4px; flex-shrink:0; }
+    /* 초기설정 팝업 */
+    .setup-box { background:var(--surface); border-radius:16px; padding:36px 32px; width:380px; max-width:90vw; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+    .setup-box h2 { font-size:18px; font-weight:700; margin:0 0 6px; }
+    .setup-box p.sub { font-size:13px; color:var(--text-muted); margin:0 0 28px; line-height:1.5; }
+    .setup-box .form-group { margin-bottom:14px; }
+    .setup-box .form-group label { font-size:12px; font-weight:700; display:block; margin-bottom:6px; color:var(--text-secondary); }
+    .setup-box .form-group input { width:100%; box-sizing:border-box; border:1px solid var(--border); border-radius:10px; padding:11px 13px; font-size:14px; font-family:inherit; background:var(--bg); color:var(--text-primary); }
+    .setup-box .form-group input:focus { border-color:#4361ee; outline:none; }
+    .setup-box .setup-error { color:#fc8181; font-size:12px; min-height:18px; margin-bottom:12px; }
+    .setup-box .btn-setup { width:100%; padding:12px; background:#4361ee; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
+    .setup-box .btn-setup:hover { background:#3451d1; }
+    .btn-folder-del:hover { color:#fc8181; }
+    /* 초기설정 팝업 */
+    .settings-add-row { display:flex; gap:8px; margin-top:16px; align-items:center; }
+    .settings-add-row input { flex:1; border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:13px; font-family:inherit; background:var(--surface); color:var(--text-primary); }
+    .settings-add-row input:focus { border-color:#4361ee; outline:none; }
     /* Sales 뷰 전환 */
     body.sales-view .desktop-add-btn  { display: none !important; }
     body.sales-view .desktop-upload-btn { display: inline-flex !important; }
@@ -1144,6 +1198,7 @@
       .desktop-add-btn { display:none !important; }
       .desktop-upload-btn { display:none !important; }
       body.sales-view .desktop-upload-btn { display:none !important; }
+      .btn-admin-settings { display:none !important; }
       /* 헤더: 한 줄, view-toggle 가로 중앙 */
       header { padding:0 10px; height:50px; }
       .logo { flex:1; }
@@ -1216,6 +1271,7 @@
     body.simulate-mobile #darkToggle { display:none !important; }
     body.simulate-mobile .desktop-add-btn { display:none !important; }
     body.simulate-mobile .desktop-upload-btn { display:none !important; }
+    body.simulate-mobile .btn-admin-settings { display:none !important; }
     body.simulate-mobile header { padding:0 10px; height:50px; }
     body.simulate-mobile .logo { flex:1; }
     body.simulate-mobile .header-right { gap:6px; margin-left:0; flex:1; justify-content:flex-end; }
@@ -1285,6 +1341,7 @@
   </div>
   <div class="header-right">
     <button class="btn-view-mode" id="btn-view-mode" onclick="toggleMobileView()">⊞ 그리드</button>
+    <button class="btn-dark btn-admin-settings" id="btn-admin-settings" onclick="openAdminSettings()" title="관리자 설정" style="display:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49.98c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98L4.95 5.07c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-.98c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49.98c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg></button>
     <button class="btn-dark btn-simulate-mobile" id="btn-simulate-mobile" onclick="toggleSimulateMobile()" title="모바일 레이아웃 미리보기">📱</button>
     <button class="btn-dark" id="darkToggle" onclick="toggleDark()" title="다크모드 전환">🌙</button>
     <button class="btn-add desktop-add-btn" onclick="openModal()">+ 일정 추가</button>
@@ -1534,6 +1591,21 @@
   </div>
 </div>
 
+
+<!-- 초기 설정 팝업 (첫 로그인: 비밀번호 1234) -->
+<div id="setup-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:3000;align-items:center;justify-content:center;">
+  <div class="setup-box">
+    <h2>초기 비밀번호 안내</h2>
+    <p class="sub">다우오피스 비밀번호를 입력해주세요.<br>이 비밀번호가 앱 로그인 비밀번호로 설정됩니다.</p>
+    <div class="form-group">
+      <label>다우오피스 비밀번호</label>
+      <input type="password" id="setup-pw" placeholder="비밀번호 입력" autocomplete="new-password" onkeydown="if(event.key==='Enter')completeSetup()">
+    </div>
+    <div class="setup-error" id="setup-error"></div>
+    <button class="btn-setup" onclick="completeSetup()">설정 완료</button>
+  </div>
+</div>
+
 <!-- Sales 날짜 팝업 -->
 <div id="sales-day-popup" style="display:none; position:fixed; inset:0; z-index:300; background:rgba(0,0,0,0.35);" onclick="closeSalesDayPopup()">
   <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--surface); border-radius:12px; padding:20px 24px; min-width:220px; box-shadow:0 8px 32px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
@@ -1690,11 +1762,6 @@
     '2026-05-24':'부처님오신날','2026-06-06':'현충일','2026-08-15':'광복절',
     '2026-09-24':'추석연휴','2026-09-25':'추석','2026-09-26':'추석연휴',
     '2026-10-03':'개천절','2026-10-05':'대체공휴일','2026-10-09':'한글날','2026-12-25':'성탄절',
-    // 전사 휴가
-    '2026-05-04':'징검다리휴가',
-    '2026-08-12':'하계휴가','2026-08-13':'하계휴가','2026-08-14':'하계휴가',
-    '2026-09-23':'추석휴가',
-    '2026-12-28':'연말휴가','2026-12-29':'연말휴가','2026-12-30':'연말휴가','2026-12-31':'연말휴가',
   };
 
   const SUPABASE_URL = 'https://vfqqwnkfszlrrekfejry.supabase.co';
@@ -1714,13 +1781,36 @@
     return _daouSession ? { 'X-Daou-Session': _daouSession } : {};
   }
 
-  function showDaouLogin(cb) {
+  async function showDaouLogin(cb) {
     _daouPendingCb = cb || null;
+
+    // 앱 로그인 = 다우오피스 PW → 자동 로그인 시도
+    if (currentUser) {
+      try {
+        const { data: u } = await sb.from('users').select('password').eq('user_id', currentUser.user_id).single();
+        if (u?.password && u.password !== '1234') {
+          const res = await fetch(`${RESERVE_BASE}/api/daou_login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: currentUser.user_id, password: u.password }),
+          });
+          const json = await res.json().catch(() => ({}));
+          if (res.ok && json.ok) {
+            _daouSession = json.session;
+            localStorage.setItem('daouSession', _daouSession);
+            if (_daouPendingCb) { const fn = _daouPendingCb; _daouPendingCb = null; fn(); }
+            return;
+          }
+        }
+      } catch {}
+    }
+
+    // 자동 로그인 실패 시 팝업 (ID 자동 입력)
     document.getElementById('daou-error').textContent = '';
-    document.getElementById('daou-id').value = '';
+    document.getElementById('daou-id').value = currentUser?.user_id || '';
     document.getElementById('daou-pw').value = '';
     document.getElementById('daou-overlay').classList.add('open');
-    setTimeout(() => document.getElementById('daou-id').focus(), 50);
+    setTimeout(() => document.getElementById('daou-pw').focus(), 50);
   }
 
   async function submitDaouLogin() {
@@ -1769,7 +1859,7 @@
     const sales = salesData[dateStr] || 0;
     const ret   = returnsData[dateStr] || 0;
     const net   = sales - ret;
-    const fmt = v => (v / 100000000).toFixed(2) + '억';
+    const fmt = v => v === 0 ? '-' : v < 10000 ? v.toLocaleString() + '원' : v < 10000000 ? Math.round(v / 10000).toLocaleString() + '만원' : (v / 100000000).toFixed(1) + '억';
     const [y, m, d] = dateStr.split('-');
     document.getElementById('sales-popup-date').textContent = `${parseInt(m)}월 ${parseInt(d)}일`;
     document.getElementById('sales-popup-sales').textContent   = fmt(sales);
@@ -1948,11 +2038,12 @@
       numEl.textContent = num;
       numEl.addEventListener('click', e => { e.stopPropagation(); openDayView(dateStr); });
       cell.appendChild(numEl);
-      if (HOLIDAYS[dateStr]) {
+      const holidayName = HOLIDAYS[dateStr] || customHolidays[dateStr];
+      if (holidayName) {
         cell.classList.add('holiday');
         const badge = document.createElement('span');
         badge.className = 'holiday-badge';
-        badge.textContent = HOLIDAYS[dateStr];
+        badge.textContent = holidayName;
         cell.appendChild(badge);
       }
 
@@ -2064,65 +2155,76 @@
       .gte('sale_date', first).lte('sale_date', last);
     salesData = {}; returnsData = {};
     (data || []).forEach(r => { salesData[r.sale_date] = r.amount; returnsData[r.sale_date] = r.returns || 0; });
-    // 데이터 없을 때 미리보기용 샘플 (실제 업로드 시 자동 교체)
-    if (Object.keys(salesData).length === 0) {
-      const p = `${year}-${pad(month+1)}`;
-      const samples = [
-        [2,1050000000,82000000],[3,870000000,45000000],[4,1320000000,103000000],[5,940000000,61000000],
-        [9,1180000000,74000000],[10,760000000,38000000],[11,1450000000,95000000],[12,1090000000,57000000],[13,830000000,42000000],
-        [16,1310000000,88000000],[17,680000000,31000000],[18,1570000000,112000000],[19,920000000,66000000],[20,1140000000,79000000],
-        [23,890000000,48000000],[24,1480000000,97000000],[25,1260000000,83000000],[26,1030000000,55000000],[27,750000000,36000000],
-        [30,1190000000,71000000]
-      ];
-      samples.forEach(([d, amt, ret]) => {
-        const ds = `${p}-${pad(d)}`;
-        if (new Date(ds) <= new Date(last)) { salesData[ds] = amt; returnsData[ds] = ret; }
-      });
-    }
   }
 
+  // Sales_2026.xlsx 컬럼 매핑 (헤더행과 실제 데이터 불일치 → 인덱스 직접 지정)
+  // [5] 구분(판매/반품)  [6] 전표번호(YYYYMMDD-XXXX)  [10] 금액
+  const SALES_COL = { GUBUN: 5, DOCNO: 6, AMOUNT: 10 };
+
   async function handleSalesUpload(input) {
-    if (!currentUser?.is_admin) return;
+    if (!currentUser?.is_admin) { alert('관리자 권한이 필요합니다.'); return; }
     const file = input.files[0];
     if (!file) return;
     input.value = '';
-    const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf, { type: 'array' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
-    const dailySales = {}, dailyReturns = {};
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      const gubun = row[5];
-      const docNo = row[6];
-      const amount = row[10];
-      if (!docNo || amount == null) continue;
-      const ds = String(docNo).replace(/\D/g, '').slice(0, 8);
-      if (ds.length !== 8) continue;
-      const dateStr = `${ds.slice(0,4)}-${ds.slice(4,6)}-${ds.slice(6,8)}`;
-      const amt = Math.abs(Number(amount));
-      if (gubun === '반품') dailyReturns[dateStr] = (dailyReturns[dateStr] || 0) + amt;
-      else dailySales[dateStr] = (dailySales[dateStr] || 0) + amt;
+    try {
+      console.log('[Upload] 파일 읽기 시작:', file.name, file.size, 'bytes');
+      const buf = await file.arrayBuffer();
+      console.log('[Upload] arrayBuffer 완료, XLSX 파싱 시작');
+      let wb;
+      try {
+        wb = XLSX.read(buf, { type: 'array' });
+      } catch (e) {
+        alert('파일을 읽을 수 없습니다. DRM이 해제된 파일인지 확인해주세요.\n(' + e.message + ')');
+        return;
+      }
+      console.log('[Upload] SheetNames:', wb.SheetNames);
+      if (!wb.SheetNames || !wb.SheetNames.length) { alert('시트가 없습니다.'); return; }
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      if (!ws) { alert('시트를 읽을 수 없습니다.'); return; }
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+      console.log('[Upload] 전체 행 수:', rows.length, '/ 샘플 row[1]:', rows[1]);
+      if (!rows || rows.length < 2) { alert('시트에 데이터가 없습니다.'); return; }
+      const dailySales = {}, dailyReturns = {};
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const gubun  = row[SALES_COL.GUBUN];
+        const docNo  = row[SALES_COL.DOCNO];
+        const amount = row[SALES_COL.AMOUNT];
+        if (!docNo || amount == null) continue;
+        const ds = String(docNo).replace(/\D/g, '').slice(0, 8);
+        if (ds.length !== 8) continue;
+        const dateStr = `${ds.slice(0,4)}-${ds.slice(4,6)}-${ds.slice(6,8)}`;
+        const amt = Math.abs(Number(amount));
+        if (String(gubun).trim() === '반품') dailyReturns[dateStr] = (dailyReturns[dateStr] || 0) + amt;
+        else dailySales[dateStr] = (dailySales[dateStr] || 0) + amt;
+      }
+      const allDates = new Set([...Object.keys(dailySales), ...Object.keys(dailyReturns)]);
+      console.log('[Upload] 파싱된 날짜 수:', allDates.size);
+      const toInsert = [...allDates].map(sale_date => ({
+        sale_date,
+        amount:  Math.round(dailySales[sale_date]  || 0),
+        returns: Math.round(dailyReturns[sale_date] || 0),
+      }));
+      if (!toInsert.length) {
+        alert(`데이터를 찾을 수 없습니다.\n행 수: ${rows.length - 1}행\nF12 Console 확인 요망`);
+        return;
+      }
+      const { error } = await sb.from('sales_data').upsert(toInsert, { onConflict: 'sale_date' });
+      if (error) { alert('업로드 실패: ' + error.message); return; }
+      alert(`${toInsert.length}일 매출 데이터 업로드 완료`);
+      await loadSalesData(curYear, curMonth);
+      renderGrid(curYear, curMonth, []);
+    } catch (e) {
+      console.error('[Upload] 오류:', e);
+      alert('오류: ' + e.message);
     }
-    const allDates = new Set([...Object.keys(dailySales), ...Object.keys(dailyReturns)]);
-    const toInsert = [...allDates].map(sale_date => ({
-      sale_date,
-      amount: Math.round(dailySales[sale_date] || 0),
-      returns: Math.round(dailyReturns[sale_date] || 0),
-      updated_at: new Date().toISOString()
-    }));
-    if (!toInsert.length) { alert('데이터를 찾을 수 없습니다.'); return; }
-    const { error } = await sb.from('sales_data').upsert(toInsert, { onConflict: 'sale_date' });
-    if (error) { alert('업로드 실패: ' + error.message); return; }
-    alert(`${toInsert.length}일 매출 데이터 업로드 완료`);
-    await loadSalesData(curYear, curMonth);
-    renderGrid(curYear, curMonth, []);
   }
 
   async function loadAndRender(year, month) {
     const first = `${year}-${pad(month+1)}-01`;
     const lastDay = new Date(year, month + 1, 0).getDate();
     const last  = `${year}-${pad(month+1)}-${pad(lastDay)}`;
+    await loadCustomHolidays();
 
     if (currentView === 'sales') {
       await loadSalesData(year, month);
@@ -2301,7 +2403,9 @@
       el.textContent = '?';
     }
     const uploadBtn = document.querySelector('.desktop-upload-btn');
-    if (uploadBtn) uploadBtn.style.display = currentUser?.is_admin ? '' : 'none';
+    if (uploadBtn) uploadBtn.style.display = (currentUser?.is_admin && window.innerWidth > 768) ? '' : 'none';
+    const settingsBtn = document.getElementById('btn-admin-settings');
+    if (settingsBtn) settingsBtn.style.display = (currentUser?.is_admin && window.innerWidth > 768) ? '' : 'none';
   }
 
   function toggleAvatarMenu() {
@@ -2333,6 +2437,12 @@
     const keep = document.getElementById('login-keep').checked;
     (keep ? localStorage : sessionStorage).setItem('calUser', JSON.stringify(data));
     document.getElementById('login-overlay').classList.remove('open');
+
+    if (data.needs_setup) {
+      document.getElementById('setup-overlay').style.display = 'flex';
+      return;
+    }
+
     updateAvatar();
     loadAndRender(curYear, curMonth);
   }
@@ -3589,8 +3699,474 @@
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js');
   }
+
+  // ── 커스텀 공휴일 ──────────────────────────────────────────
+  let customHolidays = {};
+
+  async function loadCustomHolidays() {
+    const { data } = await sb.from('custom_holidays').select('holiday_date,name');
+    customHolidays = {};
+    (data || []).forEach(r => { customHolidays[r.holiday_date] = r.name; });
+  }
+
+  // ── 관리자 설정 패널 ───────────────────────────────────────
+  function openAdminSettings() {
+    if (!currentUser?.is_admin) return;
+    document.getElementById('admin-settings-overlay').style.display = 'flex';
+    switchSettingsTab('accounts');
+  }
+
+  function closeAdminSettings() {
+    document.getElementById('admin-settings-overlay').style.display = 'none';
+  }
+
+  function switchSettingsTab(tab) {
+    document.querySelectorAll('.stab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.getElementById('settings-holidays').style.display = tab === 'holidays' ? '' : 'none';
+    document.getElementById('settings-accounts').style.display = tab === 'accounts'  ? '' : 'none';
+    if (tab === 'holidays') loadSettingsHolidays();
+    if (tab === 'accounts')  loadSettingsUsers();
+  }
+
+  // 공휴일 CRUD
+  async function loadSettingsHolidays() {
+    const { data } = await sb.from('custom_holidays').select('holiday_date,name').order('holiday_date');
+    const tbody = document.getElementById('holiday-tbody');
+    tbody.innerHTML = '';
+    (data || []).forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.holiday_date}</td><td>${r.name}</td>
+        <td><button class="btn-sdel" onclick="deleteHoliday('${r.holiday_date}')">삭제</button></td>`;
+      tbody.appendChild(tr);
+    });
+    if (!data?.length) tbody.innerHTML = '<tr><td colspan="3" style="color:var(--text-muted);text-align:center;padding:20px">등록된 공휴일이 없습니다</td></tr>';
+  }
+
+  async function addHoliday() {
+    const date = document.getElementById('new-holiday-date').value;
+    const name = document.getElementById('new-holiday-name').value.trim();
+    if (!date || !name) { alert('날짜와 이름을 모두 입력하세요.'); return; }
+    const { error } = await sb.from('custom_holidays').upsert({ holiday_date: date, name });
+    if (error) { alert('추가 실패: ' + error.message); return; }
+    document.getElementById('new-holiday-date').value = '';
+    document.getElementById('new-holiday-name').value = '';
+    await loadSettingsHolidays();
+    await loadCustomHolidays();
+    renderGrid(curYear, curMonth, _cachedData);
+  }
+
+  async function deleteHoliday(date) {
+    if (!confirm(`${date} 공휴일을 삭제할까요?`)) return;
+    await sb.from('custom_holidays').delete().eq('holiday_date', date);
+    await loadSettingsHolidays();
+    await loadCustomHolidays();
+    renderGrid(curYear, curMonth, _cachedData);
+  }
+
+  // 계정 관리
+  let _usersCache = [];
+
+  function toggleAddUser() {
+    const s = document.getElementById('user-add-section');
+    const show = s.style.display === 'none' || s.style.display === '';
+    s.style.display = show ? 'block' : 'none';
+    if (show) {
+      const container = document.getElementById('settings-accounts');
+      if (container) container.scrollTop = container.scrollHeight;
+    }
+  }
+
+  async function loadSettingsUsers() {
+    let { data, error } = await sb.from('users')
+      .select('user_id,name,team,is_admin,daou_folders')
+      .order('user_id');
+    if (error) {
+      // daou_folders 컬럼이 없을 경우 fallback
+      ({ data, error } = await sb.from('users')
+        .select('user_id,name,team,is_admin')
+        .order('user_id'));
+    }
+    if (error) { document.getElementById('users-tbody').innerHTML = '<tr><td colspan="7" style="color:#fc8181">로딩 실패: ' + error.message + '</td></tr>'; return; }
+    _usersCache = data || [];
+    const tbody = document.getElementById('users-tbody');
+    tbody.innerHTML = '';
+    _usersCache.forEach(u => {
+      const folders = Array.isArray(u.daou_folders) ? u.daou_folders : [];
+      const uidx = _usersCache.length - 1; // 현재 forEach 인덱스 = 마지막 push 위치
+      const foldersHtml = folders.length === 0
+        ? '<span style="color:var(--text-muted);font-size:12px">없음</span>'
+        : folders.length === 1
+          ? `<span style="display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:12px;white-space:nowrap">${folders[0].name || '전체'} (${folders[0].folder_id})</span>`
+          : `<button onclick="showFoldersPopup(${_usersCache.indexOf(u)},this)" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--text-primary);white-space:nowrap">${folders.length}개 폴더 ▾</button>`;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${u.user_id}</td>
+        <td>${u.name}</td>
+        <td>${u.team || '<span style="color:var(--text-muted);font-size:12px">-</span>'}</td>
+        <td>${foldersHtml}</td>
+        <td style="text-align:center"><input type="checkbox" ${u.is_admin ? 'checked' : ''} onchange="updateUserField('${u.user_id}','is_admin',this.checked)"></td>
+        <td><button class="btn-sact" onclick="resetPassword('${u.user_id}')" title="1234로 초기화 → 다음 로그인 시 다우오피스 재인증">초기화</button></td>
+        <td style="display:flex;gap:5px;padding:9px 6px">
+          <button class="btn-sact" onclick="editUser('${u.user_id}')">수정</button>
+          <button class="btn-sdel" onclick="deleteUser('${u.user_id}','${u.name}')">삭제</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+    if (!_usersCache.length) tbody.innerHTML = '<tr><td colspan="7" style="color:var(--text-muted);text-align:center;padding:20px">등록된 계정이 없습니다</td></tr>';
+  }
+
+  function editUser(userId) {
+    const u = _usersCache.find(x => String(x.user_id) === String(userId));
+    if (!u) {
+      console.warn('[editUser] 캐시에서 찾기 실패. cache:', _usersCache.length, 'userId:', userId, typeof userId);
+      // 캐시가 비어있으면 다시 로드 후 재시도
+      if (_usersCache.length === 0) {
+        loadSettingsUsers().then(() => editUser(userId));
+        return;
+      }
+      return;
+    }
+    document.getElementById('edit-user-id-val').value = userId;
+    document.getElementById('user-edit-title').textContent = `계정 수정 — ${u.name} (${userId})`;
+    document.getElementById('edit-user-name').value = u.name || '';
+    document.getElementById('edit-user-team').value = u.team || '';
+    document.getElementById('edit-user-admin').checked = !!u.is_admin;
+    const list = document.getElementById('edit-folders-list');
+    list.innerHTML = '';
+    const folders = Array.isArray(u.daou_folders) ? u.daou_folders : [];
+    if (folders.length === 0) {
+      addFolderRow('edit');
+    } else {
+      folders.forEach(f => {
+        const row = document.createElement('div');
+        row.className = 'folder-add-row';
+        row.innerHTML = `
+          <input type="text" class="folder-id-input" placeholder="폴더 ID  (예: 83)" style="width:130px" value="${f.folder_id || ''}">
+          <input type="text" class="folder-name-input" placeholder="이름 (빈칸이면 전체 인원)" style="flex:1" value="${f.name || ''}">
+          <button class="btn-folder-del" onclick="this.closest('.folder-add-row').remove()" title="삭제">×</button>`;
+        list.appendChild(row);
+      });
+    }
+    const section = document.getElementById('user-edit-section');
+    section.style.cssText = section.style.cssText.replace('display:none;', '').replace('display: none;', '');
+    section.style.display = 'block';
+    console.log('[editUser] 섹션 display:', section.style.display, '표시 여부:', section.offsetParent !== null);
+    const container = document.getElementById('settings-accounts');
+    if (container) {
+      const relTop = section.getBoundingClientRect().top - container.getBoundingClientRect().top;
+      container.scrollTop += relTop - 20;
+    }
+  }
+
+  function cancelUserEdit() {
+    document.getElementById('user-edit-section').style.display = 'none';
+    document.getElementById('settings-accounts').scrollTop = 0;
+  }
+
+  function showFoldersPopup(idx, btn) {
+    const u = _usersCache[idx];
+    if (!u) return;
+    const folders = Array.isArray(u.daou_folders) ? u.daou_folders : [];
+
+    let popup = document.getElementById('folders-popup');
+    if (!popup) {
+      popup = document.createElement('div');
+      popup.id = 'folders-popup';
+      popup.style.cssText = 'position:fixed;z-index:9500;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,0.2);min-width:220px;';
+      document.body.appendChild(popup);
+    }
+
+    const closePopup = () => { popup.style.display = 'none'; };
+
+    popup.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">기안폴더 목록</span>
+        <button id="folders-popup-x" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);padding:0 2px;line-height:1">×</button>
+      </div>
+      ${folders.map(f => `
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-light);">
+          <span style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 7px;font-size:11px;font-weight:600;white-space:nowrap">${f.folder_id}</span>
+          <span style="font-size:13px;color:var(--text-primary)">${f.name || '<em style="color:var(--text-muted)">전체 인원</em>'}</span>
+        </div>`).join('')}`;
+
+    const rect = btn.getBoundingClientRect();
+    popup.style.display = 'block';
+    popup.style.left = rect.left + 'px';
+    popup.style.top  = (rect.bottom + 6) + 'px';
+
+    document.getElementById('folders-popup-x').addEventListener('click', closePopup);
+
+    const closeOnOutside = e => {
+      if (!popup.contains(e.target) && e.target !== btn) {
+        closePopup();
+        document.removeEventListener('click', closeOnOutside);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', closeOnOutside), 0);
+  }
+
+  async function saveUserEdit() {
+    const userId = document.getElementById('edit-user-id-val').value;
+    const name   = document.getElementById('edit-user-name').value.trim();
+    const team   = document.getElementById('edit-user-team').value.trim();
+    const isAdmin = document.getElementById('edit-user-admin').checked;
+    if (!name) { alert('이름은 필수입니다.'); return; }
+
+    const folders = [];
+    document.querySelectorAll('#edit-folders-list .folder-add-row').forEach(row => {
+      const fid   = row.querySelector('.folder-id-input').value.trim();
+      const fname = row.querySelector('.folder-name-input').value.trim();
+      if (fid) folders.push({ folder_id: fid, name: fname });
+    });
+
+    const { error } = await sb.from('users').update({
+      name, team: team || null, is_admin: isAdmin, daou_folders: folders
+    }).eq('user_id', userId);
+    if (error) { alert('저장 실패: ' + error.message); return; }
+
+    cancelUserEdit();
+    await loadSettingsUsers();
+  }
+
+  async function updateUserField(userId, field, value) {
+    const { error } = await sb.from('users').update({ [field]: value }).eq('user_id', userId);
+    if (error) alert('저장 실패: ' + error.message);
+  }
+
+  async function resetPassword(userId) {
+    if (!confirm(`[${userId}] 비밀번호를 1234로 초기화할까요?\n다음 로그인 시 다우오피스 비밀번호를 다시 설정하게 됩니다.`)) return;
+    const { error } = await sb.from('users').update({ password: '1234' }).eq('user_id', userId);
+    if (error) { alert('초기화 실패: ' + error.message); return; }
+    alert('비밀번호가 1234로 초기화되었습니다.');
+    await loadSettingsUsers();
+  }
+
+  async function completeSetup() {
+    const pw = document.getElementById('setup-pw').value;
+    const errEl = document.getElementById('setup-error');
+    const btn = document.querySelector('#setup-overlay .btn-setup');
+    errEl.textContent = '';
+    if (!pw) { errEl.textContent = '비밀번호를 입력해주세요.'; return; }
+
+    btn.disabled = true; btn.textContent = '확인 중...';
+    try {
+      const res = await fetch(`${RESERVE_BASE}/api/daou_login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: currentUser.user_id, password: pw }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.ok) {
+        errEl.textContent = '다우오피스 비밀번호가 올바르지 않습니다.';
+        btn.disabled = false; btn.textContent = '설정 완료';
+        return;
+      }
+    } catch {
+      errEl.textContent = '서버 연결 실패. 잠시 후 다시 시도해주세요.';
+      btn.disabled = false; btn.textContent = '설정 완료';
+      return;
+    }
+
+    const { error } = await sb.from('users').update({ password: pw }).eq('user_id', currentUser.user_id);
+    if (error) { errEl.textContent = '저장 실패: ' + error.message; btn.disabled = false; btn.textContent = '설정 완료'; return; }
+
+    currentUser.needs_setup = false;
+    const storage = localStorage.getItem('calUser') ? localStorage : sessionStorage;
+    storage.setItem('calUser', JSON.stringify(currentUser));
+    document.getElementById('setup-overlay').style.display = 'none';
+    document.getElementById('setup-pw').value = '';
+    btn.disabled = false; btn.textContent = '설정 완료';
+    updateAvatar();
+    loadAndRender(curYear, curMonth);
+  }
+
+  async function deleteUser(userId, name) {
+    if (!confirm(`[${userId}] ${name} 계정을 삭제할까요?\n이 작업은 되돌릴 수 없습니다.`)) return;
+    const { error } = await sb.from('users').delete().eq('user_id', userId);
+    if (error) { alert('삭제 실패: ' + error.message); return; }
+    alert(`${name} 계정이 삭제되었습니다.`);
+    await loadSettingsUsers();
+  }
+
+  function addFolderRow(target) {
+    const listId = target === 'edit' ? 'edit-folders-list' : 'new-folders-list';
+    const list = document.getElementById(listId);
+    const row = document.createElement('div');
+    row.className = 'folder-add-row';
+    row.innerHTML = `
+      <input type="text" class="folder-id-input" placeholder="폴더 ID  (예: 83)" style="width:130px">
+      <input type="text" class="folder-name-input" placeholder="이름 (빈칸이면 전체 인원)" style="flex:1">
+      <button class="btn-folder-del" onclick="this.closest('.folder-add-row').remove()" title="삭제">×</button>`;
+    list.appendChild(row);
+  }
+
+  async function addUser() {
+    const userId  = document.getElementById('new-user-id').value.trim();
+    const name    = document.getElementById('new-user-name').value.trim();
+    const team    = document.getElementById('new-user-team').value.trim();
+    const isAdmin = document.getElementById('new-user-admin').checked;
+
+    if (!userId || !name) { alert('사번과 이름은 필수입니다.'); return; }
+
+    const folders = [];
+    document.querySelectorAll('#new-folders-list .folder-add-row').forEach(row => {
+      const fid   = row.querySelector('.folder-id-input').value.trim();
+      const fname = row.querySelector('.folder-name-input').value.trim();
+      if (fid) folders.push({ folder_id: fid, name: fname || fid });
+    });
+
+    const payload = { user_id: userId, name, password: '1234', is_admin: isAdmin, daou_folders: folders };
+    if (team) payload.team = team;
+
+    const { error } = await sb.from('users').insert(payload);
+    if (error) { alert('추가 실패: ' + error.message); return; }
+
+    document.getElementById('new-user-id').value = '';
+    document.getElementById('new-user-name').value = '';
+    document.getElementById('new-user-team').value = '';
+    document.getElementById('new-user-admin').checked = false;
+    document.getElementById('new-folders-list').innerHTML = `
+      <div class="folder-add-row">
+        <input type="text" class="folder-id-input" placeholder="폴더 ID  (예: 83)" style="width:130px">
+        <input type="text" class="folder-name-input" placeholder="스크래핑 이름  (예: 홍길동)" style="flex:1">
+        <button class="btn-folder-del" onclick="this.closest('.folder-add-row').remove()" title="삭제">×</button>
+      </div>`;
+
+    document.getElementById('user-add-section').style.display = 'none';
+    alert(`${name} 계정이 추가되었습니다. (초기 비밀번호: 1234)`);
+    await loadSettingsUsers();
+  }
+
 </script>
 
+
+<!-- 관리자 설정 패널 -->
+<div id="admin-settings-overlay" onclick="closeAdminSettings()">
+  <div class="admin-settings-panel" onclick="event.stopPropagation()">
+    <div class="admin-settings-hdr">
+      <h2>관리자 설정</h2>
+      <button onclick="closeAdminSettings()">×</button>
+    </div>
+    <div class="settings-tabs">
+      <button class="stab active" data-tab="accounts" onclick="switchSettingsTab('accounts')">계정</button>
+      <button class="stab" data-tab="holidays" onclick="switchSettingsTab('holidays')">공휴일</button>
+    </div>
+
+    <!-- 공휴일 탭 -->
+    <div id="settings-holidays" class="settings-body">
+      <p class="settings-section-title">자체 공휴일 · 전사 휴가</p>
+      <table class="stbl">
+        <thead><tr><th>날짜</th><th>이름</th><th></th></tr></thead>
+        <tbody id="holiday-tbody"></tbody>
+      </table>
+      <div class="settings-add-row">
+        <input type="date" id="new-holiday-date">
+        <input type="text" id="new-holiday-name" placeholder="공휴일 이름 (예: 창립기념일)">
+        <button class="btn-sadd" onclick="addHoliday()">추가</button>
+      </div>
+    </div>
+
+    <!-- 계정 탭 -->
+    <div id="settings-accounts" class="settings-body" style="display:none">
+      <p class="settings-section-title">계정 목록</p>
+      <table class="stbl">
+        <thead>
+          <tr>
+            <th>사번</th>
+            <th>이름</th>
+            <th>팀</th>
+            <th>기안폴더</th>
+            <th>관리자</th>
+            <th>비밀번호</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody"></tbody>
+      </table>
+
+      <!-- 수정 패널 -->
+      <div id="user-edit-section" style="display:none; border:1px solid var(--border); border-radius:12px; padding:20px; margin-top:20px; background:var(--bg);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <p class="settings-section-title" id="user-edit-title" style="margin:0">계정 수정</p>
+          <button onclick="cancelUserEdit()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);padding:4px 8px;">×</button>
+        </div>
+        <input type="hidden" id="edit-user-id-val">
+        <div class="user-add-field">
+          <label>이름</label>
+          <div class="uaf-val"><input type="text" id="edit-user-name" placeholder="이름 *"></div>
+        </div>
+        <div class="user-add-field">
+          <label>팀명</label>
+          <div class="uaf-val"><input type="text" id="edit-user-team" placeholder="팀명"></div>
+        </div>
+        <div class="user-add-field" style="border:none">
+          <label style="padding-top:6px">기안폴더</label>
+          <div class="uaf-val">
+            <div id="edit-folders-list"></div>
+            <button class="btn-folder-add" onclick="addFolderRow('edit')">+ 폴더 추가</button>
+          </div>
+        </div>
+        <div style="margin-top:16px; display:flex; align-items:center; gap:12px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="edit-user-admin" style="width:15px;height:15px;"> 관리자 권한
+          </label>
+          <div style="margin-left:auto; display:flex; gap:8px;">
+            <button class="btn-sact" onclick="cancelUserEdit()">취소</button>
+            <button class="btn-sadd" onclick="saveUserEdit()">저장</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px; text-align:right;">
+        <button class="btn-sadd" onclick="toggleAddUser()">+ 계정 추가</button>
+      </div>
+
+      <div id="user-add-section" style="display:none; border:1px solid var(--border); border-radius:12px; padding:20px; margin-top:12px; background:var(--bg);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <p class="settings-section-title" style="margin:0">계정 추가</p>
+          <button onclick="toggleAddUser()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);padding:4px 8px;">×</button>
+        </div>
+        <div class="user-add-field">
+          <label>사번</label>
+          <div class="uaf-val"><input type="text" id="new-user-id" placeholder="사번 입력 *"></div>
+        </div>
+        <div class="user-add-field">
+          <label>이름</label>
+          <div class="uaf-val"><input type="text" id="new-user-name" placeholder="이름 입력 *"></div>
+        </div>
+        <div class="user-add-field">
+          <label>팀명</label>
+          <div class="uaf-val"><input type="text" id="new-user-team" placeholder="팀명 입력"></div>
+        </div>
+        <div class="user-add-field">
+          <label>비밀번호</label>
+          <div class="uaf-val" style="padding-top:8px;">
+            <span style="font-size:12px;color:var(--text-muted)">초기 비밀번호 <strong>1234</strong>로 설정됩니다. 첫 로그인 시 다우오피스 비밀번호로 변경됩니다.</span>
+          </div>
+        </div>
+        <div class="user-add-field" style="border:none">
+          <label style="padding-top:6px">기안폴더</label>
+          <div class="uaf-val">
+            <div id="new-folders-list">
+              <div class="folder-add-row">
+                <input type="text" class="folder-id-input" placeholder="폴더 ID  (예: 83)" style="width:130px">
+                <input type="text" class="folder-name-input" placeholder="이름 (빈칸이면 전체 인원)" style="flex:1">
+                <button class="btn-folder-del" onclick="this.closest('.folder-add-row').remove()" title="삭제">×</button>
+              </div>
+            </div>
+            <button class="btn-folder-add" onclick="addFolderRow('new')">+ 폴더 추가</button>
+          </div>
+        </div>
+        <div style="margin-top:20px; display:flex; align-items:center; gap:12px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="new-user-admin" style="width:15px;height:15px;"> 관리자 권한
+          </label>
+          <button class="btn-sadd" onclick="addUser()" style="margin-left:auto">추가</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>

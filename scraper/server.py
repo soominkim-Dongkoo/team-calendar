@@ -176,7 +176,28 @@ class Handler(BaseHTTPRequestHandler):
             self._respond(404, {'error': 'not found'})
 
     def do_POST(self):
-        if self.path == '/api/reserve':
+        if self.path == '/api/daou_login':
+            req = self._body()
+            username = req.get('username', '').strip()
+            password = req.get('password', '')
+            if not username or not password:
+                self._respond(400, {'ok': False, 'error': '아이디와 비밀번호를 입력하세요.'})
+                return
+            try:
+                s = requests.Session()
+                s.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+                r = s.post(f'{BASE}/api/login', json={'username': username, 'password': password})
+                if r.status_code != 200:
+                    self._respond(401, {'ok': False, 'error': '로그인 실패. 아이디/비밀번호를 확인하세요.'})
+                    return
+                cookie_str = '; '.join(f'{k}={v}' for k, v in s.cookies.items())
+                if not cookie_str:
+                    self._respond(401, {'ok': False, 'error': '로그인 실패. 아이디/비밀번호를 확인하세요.'})
+                    return
+                self._respond(200, {'ok': True, 'session': cookie_str})
+            except Exception as e:
+                self._respond(500, {'ok': False, 'error': str(e)})
+        elif self.path == '/api/reserve':
             req = self._body()
             try:
                 rid = _create(req['room'], req['title'], req['start'], req['end'])

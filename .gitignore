@@ -16,3 +16,5 @@ scraper/leave_data.json
 
 # 테스트 파일
 scraper/test_login.py
+
+.vercel

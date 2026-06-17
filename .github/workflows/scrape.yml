@@ -38,8 +38,6 @@ jobs:
       - name: Run scraper
         env:
           DAOU_URL: ${{ secrets.DAOU_URL }}
-          DAOU_ID: ${{ secrets.DAOU_ID }}
-          DAOU_PW: ${{ secrets.DAOU_PW }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: python scraper/scrape.py
