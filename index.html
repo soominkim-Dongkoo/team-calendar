@@ -1717,13 +1717,13 @@
     </div>
 
     <div class="form-group">
-      <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
         알림
         <label class="toggle-switch" style="margin-bottom:0;">
           <input type="checkbox" id="ev-reminder-on" onchange="onReminderToggle()" />
           <span class="toggle-slider"></span>
         </label>
-      </label>
+      </div>
       <div class="reminder-wrap" id="reminder-inputs">
         <input type="date" id="ev-reminder-date" disabled onchange="onEvReminderDateChange()" />
         <select id="ev-reminder-hour" disabled onchange="onEvReminderHourChange()"></select>
