@@ -22,7 +22,11 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler
 from datetime import datetime, timedelta, timezone
 
-from pywebpush import webpush, WebPushException
+try:
+    from pywebpush import webpush, WebPushException
+    _WEBPUSH_OK = True
+except Exception:
+    _WEBPUSH_OK = False
 
 SB_URL       = os.environ.get('SUPABASE_URL', '')
 SB_KEY       = os.environ.get('SUPABASE_SERVICE_KEY', '')
@@ -117,7 +121,7 @@ def send_slack(channel, reminder, is_team):
     print(f'[slack] channel={channel} ok={result.get("ok")} error={result.get("error")}')
 
 def send_push(subscriptions, reminder, is_team):
-    if not VAPID_PRIVATE_KEY:
+    if not VAPID_PRIVATE_KEY or not _WEBPUSH_OK:
         return
     time_str = (reminder.get('start_time') or '')[:5] or '종일'
     label = '팀 일정' if is_team else '개인 일정'
