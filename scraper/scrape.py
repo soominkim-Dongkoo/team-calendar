@@ -137,18 +137,14 @@ def scrape_folder(page, folder_id, filter_name, existing_doc_ids):
     page.wait_for_load_state("domcontentloaded")
     page.wait_for_timeout(3000)
 
-    for sel in ["select[name='duration']", "#duration"]:
-        try:
-            page.select_option(sel, label="전체")
-            break
-        except Exception:
-            pass
-    for sel in ["#searchtype", "select[name='searchtype']"]:
-        try:
-            page.select_option(sel, label="양식명")
-            break
-        except Exception:
-            pass
+    try:
+        page.select_option("select[name='duration'], #duration", "all")
+    except Exception:
+        pass
+    try:
+        page.select_option("#searchtype", "formName")
+    except Exception:
+        page.select_option("select[name='searchtype']", "formName")
     page.fill("#keyword, input[name='keyword']", "근태계신청_본사(ERP연동)")
     try:
         page.click("button:has-text('검색')")
@@ -172,18 +168,14 @@ def scrape_folder(page, folder_id, filter_name, existing_doc_ids):
         page.goto(folder_base_url)
         page.wait_for_load_state("domcontentloaded")
         page.wait_for_timeout(2000)
-        for sel in ["select[name='duration']", "#duration"]:
-            try:
-                page.select_option(sel, label="전체")
-                break
-            except Exception:
-                pass
-        for sel in ["#searchtype", "select[name='searchtype']"]:
-            try:
-                page.select_option(sel, label="양식명")
-                break
-            except Exception:
-                pass
+        try:
+            page.select_option("select[name='duration'], #duration", "all")
+        except Exception:
+            pass
+        try:
+            page.select_option("#searchtype", "formName")
+        except Exception:
+            page.select_option("select[name='searchtype']", "formName")
         page.fill("#keyword, input[name='keyword']", "근태계신청_본사(ERP연동)")
         try:
             page.click("button:has-text('검색')")
@@ -295,18 +287,14 @@ def scrape_cancel_folder(page, folder_id, processed_cancel_ids):
         page.goto(folder_base_url)
         page.wait_for_load_state("domcontentloaded")
         page.wait_for_timeout(2000)
-        for sel in ["select[name='duration']", "#duration"]:
-            try:
-                page.select_option(sel, label="전체")
-                break
-            except Exception:
-                pass
-        for sel in ["#searchtype", "select[name='searchtype']"]:
-            try:
-                page.select_option(sel, label="양식명")
-                break
-            except Exception:
-                pass
+        try:
+            page.select_option("select[name='duration'], #duration", "all")
+        except Exception:
+            pass
+        try:
+            page.select_option("#searchtype", "formName")
+        except Exception:
+            page.select_option("select[name='searchtype']", "formName")
         page.fill("#keyword, input[name='keyword']", "ERP Data 변경 요청서")
         try:
             page.click("button:has-text('검색')")
