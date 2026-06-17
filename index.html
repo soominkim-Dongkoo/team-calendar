@@ -3919,10 +3919,29 @@
       if (fid) folders.push({ folder_id: fid, name: fname });
     });
 
+    // 기존 폴더 설정 (변경 감지용)
+    const oldUser = _usersCache.find(u => u.user_id === userId);
+    const oldFolders = Array.isArray(oldUser?.daou_folders) ? oldUser.daou_folders : [];
+    const foldersChanged = JSON.stringify(oldFolders) !== JSON.stringify(folders);
+
     const { error } = await sb.from('users').update({
       name, team: team || null, is_admin: isAdmin, daou_folders: folders
     }).eq('user_id', userId);
     if (error) { alert('저장 실패: ' + error.message); return; }
+
+    // 기안 스크래핑 설정 변경 시 → 관련 데이터 초기화 (다음 cron에서 재수집)
+    if (foldersChanged) {
+      const namesToClear = [...new Set([
+        ...oldFolders.map(f => f.name).filter(Boolean),
+        ...folders.map(f => f.name).filter(Boolean),
+      ])];
+      for (const n of namesToClear) {
+        await sb.from('leave_records').delete().eq('name', n);
+      }
+      if (namesToClear.length > 0) {
+        alert(`기안 설정이 변경되어 ${namesToClear.join(', ')} 데이터를 초기화했습니다.\n다음 스크래핑 시 새 설정으로 재수집됩니다.`);
+      }
+    }
 
     cancelUserEdit();
     await loadSettingsUsers();
