@@ -3149,7 +3149,6 @@
     if (error) { showToast('추가 실패: ' + error.message); return; }
     closeDetail();
     await loadAndRender(curYear, curMonth);
-    broadcastRefresh();
     showToast('My 뷰에 추가됐습니다.');
   }
 
@@ -3174,7 +3173,6 @@
       if (error) { showToast('삭제 실패: ' + error.message, 'error'); return; }
       closeDetail();
       loadAndRender(curYear, curMonth);
-      broadcastRefresh();
     });
   }
 
@@ -3713,7 +3711,6 @@
     setBusy(false);
     closeModal(true);
     loadAndRender(curYear, curMonth);
-    broadcastRefresh();
   }
   document.getElementById('modal').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
@@ -3743,28 +3740,8 @@
     navigator.serviceWorker.register('/sw.js');
   }
 
-  // ── Supabase Broadcast 실시간 동기화 ────────────────────────
-  console.log('[Broadcast] 초기화 시작, currentUser:', currentUser?.user_id || 'null');
-  let _broadcastChannel = null;
-  if (currentUser) {
-    const teamKey = currentUser.team || 'global';
-    console.log('[Broadcast] 채널 구독:', `refresh-${teamKey}`);
-    _broadcastChannel = sb.channel(`refresh-${teamKey}`)
-      .on('broadcast', { event: 'refresh' }, () => {
-        console.log('[Broadcast] 수신 → 리로드');
-        loadAndRender(curYear, curMonth);
-      })
-      .subscribe((status) => console.log('[Broadcast] 상태:', status));
-  }
 
-  function broadcastRefresh() {
-    if (_broadcastChannel) {
-      console.log('[Broadcast] 신호 발송');
-      _broadcastChannel.send({ type: 'broadcast', event: 'refresh', payload: {} });
-    }
-  }
-
-  setInterval(() => loadAndRender(curYear, curMonth), 30000);
+  setInterval(() => loadAndRender(curYear, curMonth), 10000);
 
   // ── 커스텀 공휴일 ──────────────────────────────────────────
   let customHolidays = {};
