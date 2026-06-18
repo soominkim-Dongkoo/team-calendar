@@ -2602,7 +2602,7 @@
       if (srcTeam) return true; // Team 소스 선택 시 전체 휴가자 표시 (My의 부분집합)
       return srcPersonal && r.name === currentUser?.name;
     }
-    if (r.is_team) return srcTeam;
+    if (r.is_team) return srcTeam && (!r.team || r.team === currentUser?.team);
     return srcPersonal && r.owner === currentUser?.user_id;
   }
 
@@ -3683,6 +3683,7 @@
       start_date: start, end_date: end,
       start_time: st, end_time: et,
       is_team: isTeam,
+      team: isTeam ? (currentUser?.team || null) : null,
       meeting_room: room,
       reminder_at: reminder,
       ...(daouResvId !== null ? { daou_reservation_id: daouResvId } : {}),
