@@ -3747,13 +3747,18 @@
   let _broadcastChannel = null;
   if (currentUser) {
     const teamKey = currentUser.team || 'global';
+    console.log('[Broadcast] 채널 구독:', `refresh-${teamKey}`);
     _broadcastChannel = sb.channel(`refresh-${teamKey}`)
-      .on('broadcast', { event: 'refresh' }, () => loadAndRender(curYear, curMonth))
-      .subscribe();
+      .on('broadcast', { event: 'refresh' }, () => {
+        console.log('[Broadcast] 수신 → 리로드');
+        loadAndRender(curYear, curMonth);
+      })
+      .subscribe((status) => console.log('[Broadcast] 상태:', status));
   }
 
   function broadcastRefresh() {
     if (_broadcastChannel) {
+      console.log('[Broadcast] 신호 발송');
       _broadcastChannel.send({ type: 'broadcast', event: 'refresh', payload: {} });
     }
   }
