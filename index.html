@@ -3748,9 +3748,9 @@
     .on('postgres_changes', { event: '*', schema: 'public', table: 'manual_events' }, () => {
       loadAndRender(curYear, curMonth);
     })
-    .subscribe((status, err) => {
-      console.log('[Realtime]', status, err || '');
-    });
+    .subscribe();
+
+  setInterval(() => loadAndRender(curYear, curMonth), 30000);
 
   // ── 커스텀 공휴일 ──────────────────────────────────────────
   let customHolidays = {};
