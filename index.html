@@ -2036,7 +2036,11 @@
       const numEl = document.createElement('div');
       numEl.className = 'day-num';
       numEl.textContent = num;
-      numEl.addEventListener('click', e => { e.stopPropagation(); openDayView(dateStr); });
+      numEl.addEventListener('click', e => {
+        e.stopPropagation();
+        openDayView(dateStr);
+        if (isMobile() && _mobileGrid) toggleMobileView();
+      });
       cell.appendChild(numEl);
       const holidayName = HOLIDAYS[dateStr] || customHolidays[dateStr];
       if (holidayName) {
