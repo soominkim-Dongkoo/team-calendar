@@ -3944,8 +3944,10 @@
     if (foldersChanged) {
       const { error: delError, count } = await sb.from('leave_records')
         .delete({ count: 'exact' }).eq('owner_user_id', userId);
-      if (!delError && count > 0) {
-        alert(`기안 설정이 변경되어 ${userId} 계정으로 수집된 데이터 ${count}건을 초기화했습니다.\n다음 스크래핑 시 새 설정으로 재수집됩니다.`);
+      if (delError) {
+        alert('데이터 초기화 실패: ' + delError.message);
+      } else {
+        alert(`기안 스크래핑 설정이 변경되어 ${userId} 계정의 기존 데이터 ${count}건을 초기화했습니다.\n다음 스크래핑 시 새 설정으로 다시 수집됩니다.`);
       }
     }
 
