@@ -3742,13 +3742,15 @@
 
   // ── Supabase Realtime 구독 ──────────────────────────────────
   sb.channel('calendar-changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'leave_records' }, () => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'leave_records' }, (payload) => {
+      console.log('[Realtime] leave_records:', payload);
       loadAndRender(curYear, curMonth);
     })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'manual_events' }, () => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'manual_events' }, (payload) => {
+      console.log('[Realtime] manual_events:', payload);
       loadAndRender(curYear, curMonth);
     })
-    .subscribe();
+    .subscribe((status, err) => console.log('[Realtime] status:', status, err || ''));
 
   setInterval(() => loadAndRender(curYear, curMonth), 30000);
 
