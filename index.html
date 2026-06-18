@@ -3940,17 +3940,12 @@
     }).eq('user_id', userId);
     if (error) { alert('저장 실패: ' + error.message); return; }
 
-    // 기안 스크래핑 설정 변경 시 → 관련 데이터 초기화 (다음 cron에서 재수집)
+    // 기안 스크래핑 설정 변경 시 → 이 계정으로 수집된 데이터만 초기화 (다음 cron에서 재수집)
     if (foldersChanged) {
-      const namesToClear = [...new Set([
-        ...oldFolders.map(f => f.name).filter(Boolean),
-        ...folders.map(f => f.name).filter(Boolean),
-      ])];
-      for (const n of namesToClear) {
-        await sb.from('leave_records').delete().eq('name', n);
-      }
-      if (namesToClear.length > 0) {
-        alert(`기안 설정이 변경되어 ${namesToClear.join(', ')} 데이터를 초기화했습니다.\n다음 스크래핑 시 새 설정으로 재수집됩니다.`);
+      const { error: delError, count } = await sb.from('leave_records')
+        .delete({ count: 'exact' }).eq('owner_user_id', userId);
+      if (!delError && count > 0) {
+        alert(`기안 설정이 변경되어 ${userId} 계정으로 수집된 데이터 ${count}건을 초기화했습니다.\n다음 스크래핑 시 새 설정으로 재수집됩니다.`);
       }
     }
 

@@ -46,6 +46,7 @@ def upsert_record(doc_id, record):
         "duration":   record["duration"],
         "status":     record["status"],
         "doc_url":    record["doc_url"],
+        "owner_user_id": record["owner_user_id"],
     }).execute()
 
 def save_cancel_record(doc_id, target_doc_id):
@@ -128,7 +129,7 @@ def extract_target_doc_id(text):
 
 # ── 폴더 스크래핑 ────────────────────────────────────────────────────────────
 
-def scrape_folder(page, folder_id, filter_name, existing_doc_ids):
+def scrape_folder(page, folder_id, filter_name, existing_doc_ids, owner_user_id):
     """단일 폴더에서 근태 레코드 수집. filter_name이 있으면 해당 이름만."""
     folder_base_url = f"https://po.dongkoo.co.kr/app/approval/deptfolder/draft/{folder_id}"
     new_count = 0
@@ -254,6 +255,7 @@ def scrape_folder(page, folder_id, filter_name, existing_doc_ids):
             "duration":   period["duration"],
             "status":     "승인",
             "doc_url":    doc_url,
+            "owner_user_id": owner_user_id,
         }
         upsert_record(doc_id, record)
         existing_doc_ids.add(doc_id)
@@ -405,7 +407,7 @@ def scrape_user(user_id, password, folders, existing_doc_ids, processed_cancel_i
             label = f"폴더 {folder_id}" + (f" (필터: {filter_name})" if filter_name else " (전체 인원)")
             print(f"  → {label}")
 
-            n = scrape_folder(page, folder_id, filter_name, existing_doc_ids)
+            n = scrape_folder(page, folder_id, filter_name, existing_doc_ids, user_id)
             c = scrape_cancel_folder(page, folder_id, processed_cancel_ids)
             new_count    += n
             cancel_count += c
