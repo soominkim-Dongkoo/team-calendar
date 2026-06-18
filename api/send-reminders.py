@@ -168,14 +168,20 @@ class handler(BaseHTTPRequestHandler):
         sent_titles = []
         for r in (reminders or []):
             owner = r.get('owner', '')
-            users = sb_get('users', [('select', 'user_id,name,slack_id'), ('user_id', f'eq.{owner}')])
+            users = sb_get('users', [('select', 'user_id,name,slack_id,team'), ('user_id', f'eq.{owner}')])
             user = users[0] if users else {}
             print(f'[event] title={r.get("title")} is_team={r.get("is_team")} owner={owner} slack_id={user.get("slack_id")}')
 
             if r.get('is_team'):
                 if SLACK_ENABLED:
                     send_slack(SLACK_CH, r, is_team=True)
-                subs = sb_get('push_subscriptions', [('select', '*')])
+                owner_team = user.get('team')
+                if owner_team:
+                    team_members = sb_get('users', [('select', 'user_id'), ('team', f'eq.{owner_team}')])
+                    team_ids = ','.join(u['user_id'] for u in team_members)
+                    subs = sb_get('push_subscriptions', [('select', '*'), ('user_id', f'in.({team_ids})')])
+                else:
+                    subs = sb_get('push_subscriptions', [('select', '*')])
                 send_push(subs, r, is_team=True)
             else:
                 if SLACK_ENABLED and user.get('slack_id'):
