@@ -2718,6 +2718,10 @@
       const chip = document.createElement('div');
       chip.className = 'day-allday-chip';
       chip.style.background = CHIP_COLOR[r._chipClass] || '#718096';
+      const evKey = String(r.id || r.doc_id || '') + '|' + (r.start_time || '') + '|' + (r.start_date || '');
+      chip.dataset.evKey = evKey;
+      if (!window._dayEvMap) window._dayEvMap = {};
+      window._dayEvMap[evKey] = r;
       const label = document.createElement('span');
       label.textContent = r._source === 'leave' ? `${r.name} ${r.label}` : r.title;
       chip.appendChild(label);
@@ -2875,9 +2879,13 @@
       if (content) {
         content.innerHTML = document.getElementById('day-view').innerHTML;
         // addEventListener는 innerHTML 복사 시 손실 → data-ev-key로 재연결
+        content.querySelectorAll('.day-allday-chip[data-ev-key]').forEach(el => {
+          const r = window._dayEvMap?.[el.dataset.evKey];
+          if (r) el.addEventListener('click', e => { e.stopPropagation(); openDetail(r, el); });
+        });
         content.querySelectorAll('.timeline-event[data-ev-key]').forEach(el => {
           const r = window._dayEvMap?.[el.dataset.evKey];
-          if (r) el.addEventListener('click', e => { e.stopPropagation(); openDetail(r, el, true); });
+          if (r) el.addEventListener('click', e => { e.stopPropagation(); openDetail(r, el); });
         });
       }
       updateMobileLegend();
