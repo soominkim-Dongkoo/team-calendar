@@ -127,7 +127,7 @@ def send_push(subscriptions, reminder, is_team):
     label = '팀 일정' if is_team else '개인 일정'
     payload = json.dumps({
         'title': f'🔔 {label} 알림',
-        'body': f'{reminder["title"]} · {reminder["start_date"]} {time_str}',
+        'body': f'{reminder["title"]}\n📅 {reminder["start_date"]} {time_str}',
         'url': '/',
     }, ensure_ascii=False)
     for sub in subscriptions:
