@@ -2223,7 +2223,13 @@
         alert(`데이터를 찾을 수 없습니다.\n행 수: ${rows.length - 1}행\nF12 Console 확인 요망`);
         return;
       }
-      const { error } = await sb.from('sales_data').upsert(toInsert, { onConflict: 'sale_date' });
+      const dates = toInsert.map(r => r.sale_date);
+      const minDate = dates.reduce((a, b) => a < b ? a : b);
+      const maxDate = dates.reduce((a, b) => a > b ? a : b);
+      const { error: delError } = await sb.from('sales_data')
+        .delete().gte('sale_date', minDate).lte('sale_date', maxDate);
+      if (delError) { alert('업로드 실패: ' + delError.message); return; }
+      const { error } = await sb.from('sales_data').insert(toInsert);
       if (error) { alert('업로드 실패: ' + error.message); return; }
       alert(`${toInsert.length}일 매출 데이터 업로드 완료`);
       await loadSalesData(curYear, curMonth);
