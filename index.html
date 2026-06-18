@@ -3149,6 +3149,7 @@
     if (error) { showToast('추가 실패: ' + error.message); return; }
     closeDetail();
     await loadAndRender(curYear, curMonth);
+    broadcastRefresh();
     showToast('My 뷰에 추가됐습니다.');
   }
 
@@ -3173,6 +3174,7 @@
       if (error) { showToast('삭제 실패: ' + error.message, 'error'); return; }
       closeDetail();
       loadAndRender(curYear, curMonth);
+      broadcastRefresh();
     });
   }
 
@@ -3711,6 +3713,7 @@
     setBusy(false);
     closeModal(true);
     loadAndRender(curYear, curMonth);
+    broadcastRefresh();
   }
   document.getElementById('modal').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
@@ -3740,17 +3743,20 @@
     navigator.serviceWorker.register('/sw.js');
   }
 
-  // ── Supabase Realtime 구독 ──────────────────────────────────
-  sb.channel('calendar-changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'leave_records' }, (payload) => {
-      console.log('[Realtime] leave_records:', payload);
-      loadAndRender(curYear, curMonth);
-    })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'manual_events' }, (payload) => {
-      console.log('[Realtime] manual_events:', payload);
-      loadAndRender(curYear, curMonth);
-    })
-    .subscribe((status, err) => console.log('[Realtime] status:', status, err || ''));
+  // ── Supabase Broadcast 실시간 동기화 ────────────────────────
+  let _broadcastChannel = null;
+  if (currentUser) {
+    const teamKey = currentUser.team || 'global';
+    _broadcastChannel = sb.channel(`refresh-${teamKey}`)
+      .on('broadcast', { event: 'refresh' }, () => loadAndRender(curYear, curMonth))
+      .subscribe();
+  }
+
+  function broadcastRefresh() {
+    if (_broadcastChannel) {
+      _broadcastChannel.send({ type: 'broadcast', event: 'refresh', payload: {} });
+    }
+  }
 
   setInterval(() => loadAndRender(curYear, curMonth), 30000);
 
