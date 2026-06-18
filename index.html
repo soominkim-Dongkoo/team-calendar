@@ -3940,10 +3940,17 @@
     }).eq('user_id', userId);
     if (error) { alert('저장 실패: ' + error.message); return; }
 
-    // 기안 스크래핑 설정 변경 시 → 이 계정으로 수집된 데이터만 초기화 (다음 cron에서 재수집)
+    // 기안 스크래핑 설정 변경 시 → 이 계정으로 수집된 데이터 + 이 계정과 연결된 레거시(owner_user_id 없음) 데이터 초기화
     if (foldersChanged) {
-      const { error: delError, count } = await sb.from('leave_records')
-        .delete({ count: 'exact' }).eq('owner_user_id', userId);
+      const legacyNames = [...new Set([
+        ...oldFolders.map(f => f.name).filter(Boolean),
+        ...folders.map(f => f.name).filter(Boolean),
+      ])];
+      let query = sb.from('leave_records').delete({ count: 'exact' });
+      query = legacyNames.length > 0
+        ? query.or(`owner_user_id.eq.${userId},and(owner_user_id.is.null,name.in.(${legacyNames.join(',')}))`)
+        : query.eq('owner_user_id', userId);
+      const { error: delError, count } = await query;
       if (delError) {
         alert('데이터 초기화 실패: ' + delError.message);
       } else {
