@@ -1,4 +1,4 @@
-const CACHE = 'teamcal-v2';
+const CACHE = 'teamcal-v3';
 const STATIC = ['/manifest.json', '/dongkoo-logo_2.svg', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {
