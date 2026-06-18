@@ -1787,12 +1787,12 @@
     // 앱 로그인 = 다우오피스 PW → 자동 로그인 시도
     if (currentUser) {
       try {
-        const { data: u } = await sb.from('users').select('password').eq('user_id', currentUser.user_id).single();
-        if (u?.password && u.password !== '1234') {
+        const { data: realPw } = await sb.rpc('get_daou_password', { p_user_id: currentUser.user_id });
+        if (realPw && realPw !== '1234') {
           const res = await fetch(`${RESERVE_BASE}/api/daou_login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: currentUser.user_id, password: u.password }),
+            body: JSON.stringify({ username: currentUser.user_id, password: realPw }),
           });
           const json = await res.json().catch(() => ({}));
           if (res.ok && json.ok) {
@@ -3994,7 +3994,7 @@
       return;
     }
 
-    const { error } = await sb.from('users').update({ password: pw }).eq('user_id', currentUser.user_id);
+    const { error } = await sb.rpc('set_daou_password', { p_user_id: currentUser.user_id, p_plain: pw });
     if (error) { errEl.textContent = '저장 실패: ' + error.message; btn.disabled = false; btn.textContent = '설정 완료'; return; }
 
     currentUser.needs_setup = false;

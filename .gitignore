@@ -1,6 +1,7 @@
 # 환경변수 / 크레덴셜
 scraper/.env
 .env
+scraper/encrypt_migration.sql
 
 # Python 캐시
 __pycache__/

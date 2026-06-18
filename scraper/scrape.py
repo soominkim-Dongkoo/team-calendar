@@ -16,14 +16,20 @@ supabase  = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
 # ── DB 헬퍼 ─────────────────────────────────────────────────────────────────
 
 def load_scrape_targets():
-    """users 테이블에서 daou_folders가 설정된 계정 목록 반환."""
+    """users 테이블에서 daou_folders가 설정된 계정 목록 반환. 비밀번호는 복호화해서 채움."""
     res = supabase.table("users").select("user_id,password,daou_folders").execute()
     targets = []
     for u in (res.data or []):
         folders = u.get("daou_folders") or []
-        pw = (u.get("password") or "").strip()
-        if folders and pw and pw != "1234":
-            targets.append(u)
+        stored_pw = (u.get("password") or "").strip()
+        if not folders or not stored_pw or stored_pw == "1234":
+            continue
+        pw_res = supabase.rpc("get_daou_password", {"p_user_id": u["user_id"]}).execute()
+        real_pw = pw_res.data
+        if not real_pw or real_pw == "1234":
+            continue
+        u["password"] = real_pw
+        targets.append(u)
     return targets
 
 def load_existing_doc_ids():
