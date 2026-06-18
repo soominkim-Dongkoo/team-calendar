@@ -4102,15 +4102,15 @@
     <!-- 공휴일 탭 -->
     <div id="settings-holidays" class="settings-body">
       <p class="settings-section-title">자체 공휴일 · 전사 휴가</p>
-      <table class="stbl">
-        <thead><tr><th>날짜</th><th>이름</th><th></th></tr></thead>
-        <tbody id="holiday-tbody"></tbody>
-      </table>
       <div class="settings-add-row">
         <input type="date" id="new-holiday-date">
         <input type="text" id="new-holiday-name" placeholder="공휴일 이름 (예: 창립기념일)">
         <button class="btn-sadd" onclick="addHoliday()">추가</button>
       </div>
+      <table class="stbl">
+        <thead><tr><th>날짜</th><th>이름</th><th></th></tr></thead>
+        <tbody id="holiday-tbody"></tbody>
+      </table>
     </div>
 
     <!-- 계정 탭 -->
