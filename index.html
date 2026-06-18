@@ -3744,6 +3744,7 @@
   }
 
   // ── Supabase Broadcast 실시간 동기화 ────────────────────────
+  console.log('[Broadcast] 초기화 시작, currentUser:', currentUser?.user_id || 'null');
   let _broadcastChannel = null;
   if (currentUser) {
     const teamKey = currentUser.team || 'global';
