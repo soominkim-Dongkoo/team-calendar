@@ -1166,7 +1166,21 @@
     .agenda-label{ font-size:13px; color:var(--text-secondary); flex:1; }
     .agenda-time { font-size:11px; color:var(--text-muted); white-space:nowrap; }
     .agenda-empty{ text-align:center; padding:48px 0; color:var(--text-muted); font-size:14px; }
-    .btn-view-mode { display:none; padding:5px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text-secondary); font-size:12px; font-family:inherit; cursor:pointer; white-space:nowrap; }
+    .btn-view-mode { display:none; padding:4px 7px; border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--text-secondary); font-size:12px; font-family:inherit; cursor:pointer; }
+    .btn-notif { display:none; position:relative; background:none; border:none; font-size:15px; cursor:pointer; padding:2px; line-height:1; }
+    .btn-notif-badge { position:absolute; top:-3px; right:-4px; background:#ef4444; color:#fff; font-size:9px; font-weight:700; border-radius:50%; min-width:15px; height:15px; display:flex; align-items:center; justify-content:center; border:1.5px solid var(--bg); padding:0 2px; }
+    .notif-overlay { position:fixed; inset:0; z-index:199; }
+    .notif-panel { position:fixed; top:0; left:0; right:0; z-index:200; background:var(--surface); box-shadow:0 4px 24px rgba(0,0,0,0.13); border-bottom-left-radius:16px; border-bottom-right-radius:16px; max-height:70vh; display:flex; flex-direction:column; }
+    .notif-panel-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px 10px; border-bottom:1px solid var(--border); }
+    .notif-panel-title { font-size:15px; font-weight:700; color:var(--text); }
+    .notif-panel-close { background:none; border:none; font-size:16px; color:var(--text-muted); cursor:pointer; padding:2px 6px; }
+    .notif-panel-list { overflow-y:auto; flex:1; }
+    .notif-item { padding:12px 18px; border-bottom:1px solid var(--border); }
+    .notif-item.unread { background:var(--hover, #f8fafc); }
+    .notif-item-title { font-size:13px; font-weight:600; color:var(--text); margin-bottom:3px; }
+    .notif-item-body { font-size:12px; color:var(--text-secondary); white-space:pre-line; line-height:1.5; }
+    .notif-item-time { font-size:11px; color:var(--text-muted); margin-top:4px; }
+    .notif-empty { text-align:center; padding:40px 0; color:var(--text-muted); font-size:13px; }
     .cal-add-btn { display:none; }
     .desktop-add-btn { }
     #mobile-day-section { padding-top: 0; }
@@ -1216,9 +1230,13 @@
       #schedule-subtoggle .sub-toggle-btn { font-size:10px; padding:3px 6px; }
       .cal-add-btn { display:inline-flex !important; padding:6px 12px; font-size:12px; }
       body.sales-view .cal-add-btn { display:inline-flex !important; visibility:hidden !important; }
-      /* btn-view-mode → 헤더에 표시 */
-      .btn-view-mode { display:inline-flex !important; align-items:center; gap:3px; font-size:11px; }
+      /* btn-view-mode, btn-notif → 헤더에 표시 */
+      .btn-view-mode { display:inline-flex !important; align-items:center; }
       body.sales-view .btn-view-mode { display:none !important; }
+      .btn-notif { display:inline-flex !important; align-items:center; }
+      /* Team/My → 서브헤더 좌측 (원래대로) */
+      #schedule-subtoggle { display:flex; position:absolute; left:12px; top:50%; transform:translateY(-50%); padding:2px; gap:1px; }
+      #schedule-subtoggle .sub-toggle-btn { font-size:10px; padding:3px 6px; }
       /* cal-nav 화살표 간격 */
       .cal-nav { gap:4px; }
       .cal-nav h2 { font-size:18px; width:auto; min-width:90px; }
@@ -1287,8 +1305,11 @@
     body.simulate-mobile #schedule-subtoggle .sub-toggle-btn { font-size:10px; padding:3px 6px; }
     body.simulate-mobile .cal-add-btn { display:inline-flex !important; padding:6px 12px; font-size:12px; }
     body.simulate-mobile.sales-view .cal-add-btn { visibility:hidden !important; }
-    body.simulate-mobile .btn-view-mode { display:inline-flex !important; align-items:center; gap:3px; font-size:11px; }
+    body.simulate-mobile .btn-view-mode { display:inline-flex !important; align-items:center; }
     body.simulate-mobile.sales-view .btn-view-mode { display:none !important; }
+    body.simulate-mobile .btn-notif { display:inline-flex !important; align-items:center; }
+    body.simulate-mobile #schedule-subtoggle { display:flex; position:absolute; left:12px; top:50%; transform:translateY(-50%); padding:2px; gap:1px; }
+    body.simulate-mobile #schedule-subtoggle .sub-toggle-btn { font-size:10px; padding:3px 6px; }
     body.simulate-mobile .cal-nav { gap:4px; }
     body.simulate-mobile .cal-nav h2 { font-size:18px; width:auto; min-width:90px; }
     body.simulate-mobile .day-timeline-wrap { max-height: calc(100vh - 196px); }
@@ -1351,7 +1372,8 @@
     <button class="sub-toggle-btn active" data-src="personal" onclick="toggleScheduleSource('personal', this)">My</button>
   </div>
   <div class="header-right">
-    <button class="btn-view-mode" id="btn-view-mode" onclick="toggleMobileView()">☰ 목록</button>
+    <button class="btn-view-mode" id="btn-view-mode" onclick="toggleMobileView()">☰</button>
+    <button class="btn-notif" id="btn-notif" onclick="openNotifHistory()">🔔<span class="btn-notif-badge" id="btn-notif-badge" style="display:none"></span></button>
     <button class="btn-dark btn-admin-settings" id="btn-admin-settings" onclick="openAdminSettings()" title="관리자 설정" style="display:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49.98c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98L4.95 5.07c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-.98c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49.98c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg></button>
     <button class="btn-dark btn-simulate-mobile" id="btn-simulate-mobile" onclick="toggleSimulateMobile()" title="모바일 레이아웃 미리보기">📱</button>
     <button class="btn-dark" id="darkToggle" onclick="toggleDark()" title="다크모드 전환">🌙</button>
@@ -1409,6 +1431,16 @@
     </div>
 
   </sidebar>
+
+  <!-- 알림 히스토리 패널 -->
+  <div id="notif-panel" class="notif-panel" style="display:none;">
+    <div class="notif-panel-header">
+      <span class="notif-panel-title">알림</span>
+      <button class="notif-panel-close" onclick="closeNotifHistory()">✕</button>
+    </div>
+    <div id="notif-panel-list" class="notif-panel-list"></div>
+  </div>
+  <div id="notif-overlay" class="notif-overlay" style="display:none;" onclick="closeNotifHistory()"></div>
 
   <!-- 메인 캘린더 -->
   <div class="calendar-area">
@@ -2165,7 +2197,7 @@
     _mobileGrid = true;
     document.body.classList.toggle('simulate-mobile', _forceMobile);
     document.getElementById('btn-simulate-mobile').textContent = _forceMobile ? '🖥' : '📱';
-    document.getElementById('btn-view-mode').textContent = '☰ 목록';
+    document.getElementById('btn-view-mode').innerHTML = '☰';
     const legend = document.getElementById('mobile-cal-legend');
     if (legend) legend.style.display = _forceMobile ? '' : 'none';
     loadAndRender(curYear, curMonth);
@@ -2495,6 +2527,7 @@
     }
 
     updateAvatar();
+    loadNotifBadge();
     loadAndRender(curYear, curMonth);
   }
 
@@ -3308,18 +3341,84 @@
     const mds    = document.getElementById('mobile-day-section');
     const legend = document.getElementById('mobile-cal-legend');
     if (_mobileGrid) {
-      btn.textContent = '☰ 목록';
+      btn.innerHTML = '☰';
       grid.style.display = '';
       mds.style.display = 'none';
       if (legend) { legend.style.display = ''; updateMobileLegend(); }
     } else {
-      btn.textContent = '⊞ 그리드';
+      btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg>';
       grid.style.display = 'none';
       mds.style.display = '';
       if (legend) { legend.style.display = ''; updateMobileLegend(); }
       const fallback = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
       openDayView(_selectedDayStr || fallback);
     }
+  }
+
+  async function loadNotifBadge() {
+    if (!currentUser?.user_id) return;
+    const { data } = await sb.from('notification_history')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', currentUser.user_id)
+      .eq('is_read', false);
+    const badge = document.getElementById('btn-notif-badge');
+    if (!badge) return;
+    const count = data === null ? 0 : (typeof data === 'number' ? data : 0);
+    // count는 head:true 시 null로 오므로 별도 count 쿼리
+    const res = await sb.from('notification_history')
+      .select('id')
+      .eq('user_id', currentUser.user_id)
+      .eq('is_read', false);
+    const n = res.data ? res.data.length : 0;
+    badge.textContent = n;
+    badge.style.display = n > 0 ? 'flex' : 'none';
+  }
+
+  async function openNotifHistory() {
+    if (!currentUser?.user_id) return;
+    const panel = document.getElementById('notif-panel');
+    const overlay = document.getElementById('notif-overlay');
+    panel.style.display = 'flex';
+    overlay.style.display = 'block';
+
+    const list = document.getElementById('notif-panel-list');
+    list.innerHTML = '<div class="notif-empty">불러오는 중...</div>';
+
+    const { data } = await sb.from('notification_history')
+      .select('*')
+      .eq('user_id', currentUser.user_id)
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    if (!data || data.length === 0) {
+      list.innerHTML = '<div class="notif-empty">알림 내역이 없습니다.</div>';
+    } else {
+      list.innerHTML = data.map(n => {
+        const dt = new Date(n.created_at);
+        const timeStr = dt.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) + ' ' +
+          dt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+        return `<div class="notif-item${n.is_read ? '' : ' unread'}">
+          <div class="notif-item-title">${n.title}</div>
+          <div class="notif-item-body">${n.body}</div>
+          <div class="notif-item-time">${timeStr}</div>
+        </div>`;
+      }).join('');
+    }
+
+    // 모두 읽음 처리
+    await sb.from('notification_history')
+      .update({ is_read: true })
+      .eq('user_id', currentUser.user_id)
+      .eq('is_read', false);
+
+    const badge = document.getElementById('btn-notif-badge');
+    if (badge) badge.style.display = 'none';
+    if ('clearAppBadge' in navigator) navigator.clearAppBadge().catch(() => {});
+  }
+
+  function closeNotifHistory() {
+    document.getElementById('notif-panel').style.display = 'none';
+    document.getElementById('notif-overlay').style.display = 'none';
   }
 
   function renderAgenda(year, month) {
@@ -3766,6 +3865,7 @@
   }
 
   updateAvatar();
+  loadNotifBadge();
   if (!currentUser) {
     document.getElementById('login-overlay').classList.add('open');
     hideLoader();

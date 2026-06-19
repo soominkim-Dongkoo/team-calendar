@@ -41,6 +41,19 @@ def sb_get(table, params):
     except Exception:
         return []
 
+def sb_insert_history(user_ids, title, body):
+    rows = [{'user_id': uid, 'title': title, 'body': body} for uid in user_ids]
+    req = urllib.request.Request(
+        f'{SB_URL}/rest/v1/notification_history',
+        data=json.dumps(rows, ensure_ascii=False).encode(),
+        headers={**_sb_headers(), 'Prefer': 'return=minimal'},
+        method='POST',
+    )
+    try:
+        urllib.request.urlopen(req, timeout=10)
+    except Exception:
+        pass
+
 def sb_delete_sub(sub_id):
     req = urllib.request.Request(
         f'{SB_URL}/rest/v1/push_subscriptions?id=eq.{sub_id}',
@@ -78,11 +91,10 @@ def send_push(user_ids):
     monthly_net = net(month_rows)
 
     today_str = today.strftime('%-m월 %-d일')
-    payload = json.dumps({
-        'title': '📊 매출 업데이트',
-        'body':  f'{today_str} 매출 데이터가 업데이트되었습니다.\n당일 : {fmt(daily_net)}\n누적 : {fmt(monthly_net)}',
-        'url':   '/',
-    }, ensure_ascii=False)
+
+    push_title = '📊 매출 업데이트'
+    push_body  = f'{today_str} 매출 데이터가 업데이트되었습니다.\n당일 : {fmt(daily_net)}\n누적 : {fmt(monthly_net)}'
+    payload = json.dumps({'title': push_title, 'body': push_body, 'url': '/'}, ensure_ascii=False)
 
     sent = 0
     for sub in subs:
@@ -101,6 +113,9 @@ def send_push(user_ids):
             status = ex.response.status_code if ex.response is not None else None
             if status in (404, 410):
                 sb_delete_sub(sub['id'])
+
+    if sent > 0:
+        sb_insert_history(user_ids, push_title, push_body)
     return sent
 
 
