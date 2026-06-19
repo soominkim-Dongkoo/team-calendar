@@ -3777,6 +3777,13 @@
     navigator.serviceWorker.register('/sw.js');
   }
 
+  // 앱 열거나 포커스 시 뱃지 초기화
+  function clearBadge() {
+    if ('clearAppBadge' in navigator) navigator.clearAppBadge().catch(() => {});
+  }
+  clearBadge();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) clearBadge(); });
+
 
   setInterval(() => loadAndRender(curYear, curMonth), 10000);
 

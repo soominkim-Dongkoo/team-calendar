@@ -1,4 +1,4 @@
-const CACHE = 'teamcal-v3';
+const CACHE = 'teamcal-v4';
 const STATIC = ['/manifest.json', '/dongkoo-logo_2.svg', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -35,28 +35,52 @@ self.addEventListener('fetch', e => {
   );
 });
 
+async function getBadgeCount() {
+  try {
+    const cache = await caches.open('badge-store');
+    const res = await cache.match('/badge-count');
+    return res ? (parseInt(await res.text()) || 0) : 0;
+  } catch { return 0; }
+}
+
+async function updateBadge(n) {
+  try {
+    const cache = await caches.open('badge-store');
+    await cache.put('/badge-count', new Response(String(n)));
+    if ('setAppBadge' in navigator) {
+      n > 0 ? await navigator.setAppBadge(n) : await navigator.clearAppBadge();
+    }
+  } catch {}
+}
+
 self.addEventListener('push', e => {
   let data = {};
   try { data = e.data.json(); } catch (err) {}
-  const title = data.title || '경영기획팀 캘린더';
+  const title = data.title || 'Dongkoo Calendar';
   const options = {
     body: data.body || '',
     icon: '/icon-192.png',
     badge: '/icon-192.png',
     data: { url: data.url || '/' },
   };
-  e.waitUntil(self.registration.showNotification(title, options));
+  e.waitUntil(
+    getBadgeCount().then(n => updateBadge(n + 1)).then(() =>
+      self.registration.showNotification(title, options)
+    )
+  );
 });
 
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   const url = (e.notification.data && e.notification.data.url) || '/';
   e.waitUntil(
-    self.clients.matchAll({ type: 'window' }).then(clients => {
-      for (const client of clients) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) return client.focus();
-      }
-      return self.clients.openWindow(url);
-    })
+    updateBadge(0).then(() =>
+      self.clients.matchAll({ type: 'window' }).then(clients => {
+        for (const client of clients) {
+          if (client.url.includes(self.location.origin) && 'focus' in client) return client.focus();
+        }
+        return self.clients.openWindow(url);
+      })
+    )
   );
 });
