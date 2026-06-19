@@ -65,88 +65,40 @@ def fetch_events(session):
     return [e for e in data.get('data', []) if e.get('calendarId') == CALENDAR_ID]
 
 
-def to_db(ev):
-    timed      = ev.get('timeType') == 'timed'
-    start_date = ev['startTime'][:10]
-    end_date   = ev['endTime'][:10]
-    start_time = ev['startTime'][11:16] if timed else None
-    end_time   = ev['endTime'][11:16]   if timed else None
-    return {
-        'title':      ev['summary'],
-        'start_date': start_date,
-        'end_date':   end_date,
-        'start_time': start_time,
-        'end_time':   end_time,
-        'location':   ev.get('location') or None,
-    }
-
-
-def load_existing():
-    today = date.today().isoformat()
-    res = supabase.table('manual_events') \
-        .select('id, start_date, title, start_time, end_time, meeting_room') \
-        .eq('owner', OWNER).gte('start_date', today).execute()
-    return {(r['start_date'], r['title']): r for r in (res.data or [])}
-
-
-def changed(old, new):
-    def n(t): return (t or '')[:5]
-    return (n(old['start_time']) != n(new['start_time']) or
-            n(old['end_time'])   != n(new['end_time'])   or
-            (old.get('meeting_room') or '') != (new['location'] or ''))
-
 
 def scrape():
     print('[1] 다우오피스 로그인...')
     session = login()
     print('    완료')
 
-    print(f'[2] 캘린더 API 호출 (전사일정, {DAYS_AHEAD}일)...')
+    print(f'[2] 캘린더 API 호출 (전사일정, 오늘~{DAYS_AHEAD}일)...')
     events = fetch_events(session)
     print(f'    {len(events)}건 조회')
 
-    print('[3] DB 기존 데이터 비교...')
-    existing = load_existing()
+    # 오늘 이후 기존 데이터만 삭제 → 과거 데이터는 보존
+    today = date.today().isoformat()
+    print('[3] 오늘 이후 기존 데이터 삭제...')
+    supabase.table('manual_events').delete() \
+        .eq('owner', OWNER).gte('start_date', today).execute()
 
-    to_insert    = []
-    to_delete_ids = []
-    skip_count   = 0
+    if not events:
+        print('저장할 일정 없음')
+        return
 
-    for ev in events:
-        p   = to_db(ev)
-        key = (p['start_date'], p['title'])
+    records = [{
+        'title':        ev['summary'],
+        'event_type':   'company',
+        'owner':        OWNER,
+        'is_team':      True,
+        'start_date':   ev['startTime'][:10],
+        'end_date':     ev['endTime'][:10],
+        'start_time':   ev['startTime'][11:16] if ev.get('timeType') == 'timed' else None,
+        'end_time':     ev['endTime'][11:16]   if ev.get('timeType') == 'timed' else None,
+        'meeting_room': ev.get('location') or None,
+    } for ev in events]
 
-        if key not in existing:
-            to_insert.append(p)
-            print(f'    [신규] {p["start_date"]} {p["title"]}')
-        elif changed(existing[key], p):
-            to_delete_ids.append(existing[key]['id'])
-            to_insert.append(p)
-            print(f'    [변경] {p["start_date"]} {p["title"]}')
-        else:
-            skip_count += 1
-
-    new_count = len(to_insert) - len(to_delete_ids)
-    print(f'    신규 {new_count}건 | 변경 {len(to_delete_ids)}건 | 스킵 {skip_count}건')
-
-    for rid in to_delete_ids:
-        supabase.table('manual_events').delete().eq('id', rid).execute()
-
-    if to_insert:
-        records = [{
-            'title':        p['title'],
-            'event_type':   'company',
-            'owner':        OWNER,
-            'is_team':      True,
-            'start_date':   p['start_date'],
-            'end_date':     p['end_date'],
-            'start_time':   p['start_time'],
-            'end_time':     p['end_time'],
-            'meeting_room': p['location'],
-        } for p in to_insert]
-        supabase.table('manual_events').insert(records).execute()
-
-    print(f'완료: {len(to_insert)}건 저장')
+    supabase.table('manual_events').insert(records).execute()
+    print(f'완료: {len(records)}건 저장')
 
 
 if __name__ == '__main__':
