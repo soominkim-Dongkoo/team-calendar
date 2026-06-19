@@ -1,30 +1,58 @@
 # -*- coding: utf-8 -*-
+import sys
+import os
+
+# PyInstaller --onefile: DLL 검색 경로 등록
+if getattr(sys, 'frozen', False):
+    base = sys._MEIPASS
+    os.environ['PATH'] = base + os.pathsep + os.environ.get('PATH', '')
+    if hasattr(os, 'add_dll_directory'):
+        os.add_dll_directory(base)
+        for _p in sys.path:
+            if _p and os.path.isdir(_p):
+                try: os.add_dll_directory(_p)
+                except: pass
+
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-import threading
 import json
 import urllib.request
 
 SUPABASE_URL = 'https://vfqqwnkfszlrrekfejry.supabase.co'
 SUPABASE_KEY = 'sb_publishable_4OImNxzBy7jz236aI0TDkg_ye_vLU9L'
+VERCEL_BASE  = 'https://team-calendar-soominkim-dongkoos-projects.vercel.app'
 
 GUBUN_COL  = 5
 DOCNO_COL  = 6
 AMOUNT_COL = 10
 
+BG      = '#f1f5f9'
+SURFACE = '#ffffff'
+PRIMARY = '#4361ee'
+TEXT    = '#1e293b'
+MUTED   = '#94a3b8'
+BORDER  = '#e2e8f0'
+SUCCESS = '#16a34a'
+ERROR   = '#dc2626'
+
 
 def read_excel(filepath):
-    import xlwings as xw
-    app = xw.App(visible=False)
+    import win32com.client
+    xl = win32com.client.DispatchEx("Excel.Application")
+    xl.Visible = False
+    xl.DisplayAlerts = False
     try:
-        wb = app.books.open(filepath)
-        ws = wb.sheets[0]
-        rows = ws.range('A1').expand().value
-        return rows
+        wb = xl.Workbooks.Open(filepath, UpdateLinks=0, ReadOnly=True)
+        ws = wb.Worksheets(1)
+        data = ws.UsedRange.Value
+        wb.Close(False)
+        if data is None:
+            return []
+        if not isinstance(data[0], tuple):
+            return [[v] for v in data]
+        return [list(r) for r in data]
     finally:
-        try: wb.close()
-        except: pass
-        try: app.quit()
+        try: xl.Quit()
         except: pass
 
 
@@ -48,28 +76,32 @@ def parse_rows(rows):
             daily_returns[date_str] = daily_returns.get(date_str, 0) + amt
         else:
             daily_sales[date_str] = daily_sales.get(date_str, 0) + amt
-
     all_dates = set(list(daily_sales.keys()) + list(daily_returns.keys()))
     return [
-        {
-            'sale_date': d,
-            'amount':  round(daily_sales.get(d, 0)),
-            'returns': round(daily_returns.get(d, 0)),
-        }
+        {'sale_date': d, 'amount': round(daily_sales.get(d, 0)), 'returns': round(daily_returns.get(d, 0))}
         for d in sorted(all_dates)
     ]
 
 
 def upload_to_supabase(records):
-    url = f"{SUPABASE_URL}/rest/v1/sales_data"
     headers = {
         'apikey': SUPABASE_KEY,
         'Authorization': f'Bearer {SUPABASE_KEY}',
         'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates',
     }
+    dates = [r['sale_date'] for r in records]
+    min_date, max_date = min(dates), max(dates)
+
+    # 파일 날짜 범위 내 기존 데이터 삭제
+    del_url = (f"{SUPABASE_URL}/rest/v1/sales_data"
+               f"?sale_date=gte.{min_date}&sale_date=lte.{max_date}")
+    req = urllib.request.Request(del_url, headers=headers, method='DELETE')
+    urllib.request.urlopen(req, timeout=30)
+
+    # 새 데이터 삽입
+    ins_url = f"{SUPABASE_URL}/rest/v1/sales_data"
     body = json.dumps(records, ensure_ascii=False).encode('utf-8')
-    req = urllib.request.Request(url, data=body, headers=headers, method='POST')
+    req = urllib.request.Request(ins_url, data=body, headers={**headers, 'Prefer': 'return=minimal'}, method='POST')
     with urllib.request.urlopen(req, timeout=30) as res:
         return res.status
 
@@ -79,30 +111,71 @@ class App(tk.Tk):
         super().__init__()
         self.title("매출 데이터 업로드")
         self.resizable(False, False)
-        self.geometry("500x230")
+        self.configure(bg=BG)
+        self._full_path = None
+        w, h = 500, 240
+        x = (self.winfo_screenwidth()  - w) // 2
+        y = (self.winfo_screenheight() - h) // 2
+        self.geometry(f"{w}x{h}+{x}+{y}")
+        self._apply_style()
         self._build()
 
+    def _apply_style(self):
+        s = ttk.Style(self)
+        s.theme_use('clam')
+        s.configure('Bar.Horizontal.TProgressbar',
+                    troughcolor=BORDER, background=PRIMARY,
+                    thickness=4, borderwidth=0, relief='flat')
+
     def _build(self):
-        tk.Label(self, text="매출 엑셀 파일 (DRM 자동 해제)", font=("맑은 고딕", 11, "bold")).pack(anchor='w', padx=16, pady=(16, 6))
+        outer = tk.Frame(self, bg=BG)
+        outer.pack(fill='both', expand=True, padx=20, pady=20)
 
-        row = tk.Frame(self)
-        row.pack(fill='x', padx=16)
-        self.path_var = tk.StringVar()
-        tk.Entry(row, textvariable=self.path_var, state='readonly', width=48).pack(side='left', fill='x', expand=True)
-        tk.Button(row, text="파일 찾기", command=self._browse).pack(side='left', padx=(8, 0))
+        card = tk.Frame(outer, bg=SURFACE,
+                        highlightthickness=1, highlightbackground=BORDER)
+        card.pack(fill='both', expand=True)
 
-        self.status_var = tk.StringVar(value="파일을 선택해주세요.")
-        tk.Label(self, textvariable=self.status_var, fg='gray', font=("맑은 고딕", 9)).pack(anchor='w', padx=16, pady=(12, 4))
+        inner = tk.Frame(card, bg=SURFACE)
+        inner.pack(fill='both', expand=True, padx=24, pady=20)
 
-        self.bar = ttk.Progressbar(self, mode='indeterminate', length=468)
-        self.bar.pack(padx=16)
+        tk.Label(inner, text="엑셀 파일", font=("맑은 고딕", 8, "bold"),
+                 bg=SURFACE, fg=MUTED).pack(anchor='w', pady=(0, 5))
+
+        file_row = tk.Frame(inner, bg=SURFACE)
+        file_row.pack(fill='x', pady=(0, 14))
+
+        entry_frame = tk.Frame(file_row, bg=BORDER)
+        entry_frame.pack(side='left', fill='x', expand=True, padx=(0, 8))
+
+        self.path_var = tk.StringVar(value="파일을 선택해주세요...")
+        self._path_entry = tk.Entry(
+            entry_frame, textvariable=self.path_var, state='readonly',
+            font=("맑은 고딕", 9), bg=SURFACE, fg=MUTED,
+            relief='flat', bd=0, readonlybackground=SURFACE,
+        )
+        self._path_entry.pack(fill='x', padx=10, pady=7)
+
+        tk.Button(file_row, text="파일 찾기", font=("맑은 고딕", 9),
+                  bg=PRIMARY, fg='white', activebackground='#3451d1', activeforeground='white',
+                  relief='flat', bd=0, padx=14, pady=6, cursor='hand2',
+                  command=self._browse).pack(side='right')
+
+        self.bar = ttk.Progressbar(inner, style='Bar.Horizontal.TProgressbar',
+                                    mode='indeterminate')
+        self.bar.pack(fill='x', pady=(0, 8))
+
+        self.status_var = tk.StringVar(value="파일을 선택하면 업로드 버튼이 활성화됩니다.")
+        self.status_lbl = tk.Label(inner, textvariable=self.status_var,
+                                    font=("맑은 고딕", 9), bg=SURFACE, fg=MUTED, anchor='w')
+        self.status_lbl.pack(fill='x', pady=(0, 16))
 
         self.btn = tk.Button(
-            self, text="업로드", font=("맑은 고딕", 11),
-            bg="#4361ee", fg="white", activebackground="#3451d1", activeforeground="white",
-            width=14, state='disabled', command=self._upload,
+            inner, text="업로드", font=("맑은 고딕", 11, "bold"),
+            bg='#cbd5e1', fg='white', activebackground=PRIMARY, activeforeground='white',
+            relief='flat', bd=0, pady=10, cursor='hand2',
+            state='disabled', command=self._upload,
         )
-        self.btn.pack(pady=14)
+        self.btn.pack(fill='x')
 
     def _browse(self):
         path = filedialog.askopenfilename(
@@ -110,44 +183,62 @@ class App(tk.Tk):
             filetypes=[("Excel 파일", "*.xlsx *.xls"), ("모든 파일", "*.*")],
         )
         if path:
+            self._full_path = path
             self.path_var.set(path)
-            self.btn['state'] = 'normal'
-            self.status_var.set("업로드 버튼을 눌러 진행하세요.")
+            self._path_entry.configure(fg=TEXT)
+            self._path_entry.xview_moveto(1)
+            self.btn.configure(state='normal', bg=PRIMARY)
+            self._set_status("업로드 버튼을 눌러 진행하세요.", MUTED)
 
     def _upload(self):
-        path = self.path_var.get()
-        if not path:
+        if not self._full_path:
             return
-        self.btn['state'] = 'disabled'
-        self.bar.start(12)
-        self.status_var.set("Excel 열기 중... (DRM 해제 포함, 잠시 대기)")
-        threading.Thread(target=self._run, args=(path,), daemon=True).start()
-
-    def _run(self, path):
+        self.btn.configure(state='disabled', bg='#cbd5e1')
+        self.bar.start(10)
+        self._set_status("파일 열기 중...", MUTED)
+        self.update()
         try:
-            rows = read_excel(path)
+            self._set_status("데이터 읽는 중...", MUTED)
+            self.update()
+            rows = read_excel(self._full_path)
             n = len(rows) if rows else 0
-            self.after(0, lambda: self.status_var.set(f"파싱 중... (총 {n}행)"))
+            self._set_status(f"데이터 파싱 중... (총 {n}행)", MUTED)
+            self.update()
             records = parse_rows(rows)
             if not records:
-                self.after(0, lambda: self._done(False, "데이터를 찾을 수 없습니다. 파일 형식을 확인하세요."))
+                self._done(False, "데이터를 찾을 수 없습니다. 파일 형식을 확인하세요.")
                 return
             cnt = len(records)
-            self.after(0, lambda: self.status_var.set(f"Supabase 업로드 중... ({cnt}일치 데이터)"))
+            self._set_status(f"업로드 중... ({cnt}일치)", MUTED)
+            self.update()
             upload_to_supabase(records)
-            self.after(0, lambda: self._done(True, f"{cnt}일치 매출 데이터 업로드 완료!"))
+            from datetime import date as _date
+            if _date.today().isoformat() in [r['sale_date'] for r in records]:
+                try:
+                    req = urllib.request.Request(
+                        f'{VERCEL_BASE}/api/notify-sales', method='POST',
+                        headers={'Content-Type': 'application/json'},
+                        data=b'{}',
+                    )
+                    urllib.request.urlopen(req, timeout=10)
+                except Exception:
+                    pass
+            self._done(True, f"{cnt}일치 매출 데이터가 업로드되었습니다.")
         except Exception as e:
-            msg = str(e)
-            self.after(0, lambda: self._done(False, f"오류: {msg}"))
+            self._done(False, f"오류: {e}")
 
     def _done(self, ok, msg):
         self.bar.stop()
-        self.btn['state'] = 'normal'
-        self.status_var.set(msg)
+        self.btn.configure(state='normal', bg=PRIMARY)
+        self._set_status(msg, SUCCESS if ok else ERROR)
         if ok:
             messagebox.showinfo("완료", msg)
         else:
             messagebox.showerror("실패", msg)
+
+    def _set_status(self, msg, color=MUTED):
+        self.status_var.set(msg)
+        self.status_lbl.configure(fg=color)
 
 
 if __name__ == '__main__':

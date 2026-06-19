@@ -653,6 +653,7 @@
       display: flex;
       gap: 16px;
       align-items: center;
+      min-height: 24px;
     }
 
     .legend-item {
@@ -1170,7 +1171,7 @@
     .desktop-add-btn { }
     #mobile-day-section { padding-top: 0; }
     #mobile-day-section .day-view { display: flex; flex-direction: column; gap: 10px; }
-    .mobile-legend-row { display:flex; flex-wrap:wrap; gap:10px; padding:8px 0 6px; border-bottom:1px solid var(--border); margin-bottom:4px; justify-content:center; }
+    .mobile-legend-row { display:flex; flex-wrap:wrap; gap:10px; padding:8px 0 6px; border-bottom:1px solid var(--border); margin-bottom:4px; justify-content:center; min-height:28px; }
     .mobile-legend-row .legend-item { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-secondary); cursor:pointer; }
     .mobile-legend-row .legend-item input { appearance:none; -webkit-appearance:none; display:block; width:13px; height:13px; border:1.5px solid #cbd5e0; border-radius:3px; background-color:#fff; background-repeat:no-repeat; background-position:50% 50%; background-size:0; cursor:pointer; flex-shrink:0; }
     .mobile-legend-row .legend-item input:checked { border-color:#4a5568; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 10 10' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='1.5,5 4,7.5 8.5,2.5' fill='none' stroke='%234a5568' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-size:70% 70%; }
@@ -2232,6 +2233,8 @@
       const { error } = await sb.from('sales_data').insert(toInsert);
       if (error) { alert('업로드 실패: ' + error.message); return; }
       alert(`${toInsert.length}일 매출 데이터 업로드 완료`);
+      const todayStr = new Date().toISOString().slice(0, 10);
+      if (allDates.has(todayStr)) fetch('/api/notify-sales', { method: 'POST' }).catch(() => {});
       await loadSalesData(curYear, curMonth);
       renderGrid(curYear, curMonth, []);
     } catch (e) {
@@ -3827,15 +3830,15 @@
 
   async function loadSettingsUsers() {
     let { data, error } = await sb.from('users')
-      .select('user_id,name,team,is_admin,daou_folders')
+      .select('user_id,name,team,is_admin,sales_notify,daou_folders')
       .order('user_id');
     if (error) {
       // daou_folders 컬럼이 없을 경우 fallback
       ({ data, error } = await sb.from('users')
-        .select('user_id,name,team,is_admin')
+        .select('user_id,name,team,is_admin,sales_notify')
         .order('user_id'));
     }
-    if (error) { document.getElementById('users-tbody').innerHTML = '<tr><td colspan="7" style="color:#fc8181">로딩 실패: ' + error.message + '</td></tr>'; return; }
+    if (error) { document.getElementById('users-tbody').innerHTML = '<tr><td colspan="8" style="color:#fc8181">로딩 실패: ' + error.message + '</td></tr>'; return; }
     _usersCache = data || [];
     const tbody = document.getElementById('users-tbody');
     tbody.innerHTML = '';
@@ -3854,6 +3857,7 @@
         <td>${u.team || '<span style="color:var(--text-muted);font-size:12px">-</span>'}</td>
         <td>${foldersHtml}</td>
         <td style="text-align:center"><input type="checkbox" ${u.is_admin ? 'checked' : ''} onchange="updateUserField('${u.user_id}','is_admin',this.checked)"></td>
+        <td style="text-align:center"><input type="checkbox" ${u.sales_notify ? 'checked' : ''} onchange="updateUserField('${u.user_id}','sales_notify',this.checked)"></td>
         <td><button class="btn-sact" onclick="resetPassword('${u.user_id}')" title="1234로 초기화 → 다음 로그인 시 다우오피스 재인증">초기화</button></td>
         <td style="display:flex;gap:5px;padding:9px 6px">
           <button class="btn-sact" onclick="editUser('${u.user_id}')">수정</button>
@@ -3861,7 +3865,7 @@
         </td>`;
       tbody.appendChild(tr);
     });
-    if (!_usersCache.length) tbody.innerHTML = '<tr><td colspan="7" style="color:var(--text-muted);text-align:center;padding:20px">등록된 계정이 없습니다</td></tr>';
+    if (!_usersCache.length) tbody.innerHTML = '<tr><td colspan="8" style="color:var(--text-muted);text-align:center;padding:20px">등록된 계정이 없습니다</td></tr>';
   }
 
   function editUser(userId) {
@@ -4151,6 +4155,7 @@
             <th>팀</th>
             <th>기안폴더</th>
             <th>관리자</th>
+            <th>매출알림</th>
             <th>비밀번호</th>
             <th></th>
           </tr>
