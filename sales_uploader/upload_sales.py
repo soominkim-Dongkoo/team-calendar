@@ -20,7 +20,7 @@ import urllib.request
 
 SUPABASE_URL = 'https://vfqqwnkfszlrrekfejry.supabase.co'
 SUPABASE_KEY = 'sb_publishable_4OImNxzBy7jz236aI0TDkg_ye_vLU9L'
-VERCEL_BASE  = 'https://team-calendar-soominkim-dongkoos-projects.vercel.app'
+VERCEL_BASE  = 'https://team-calendar-ten.vercel.app'
 
 GUBUN_COL  = 5
 DOCNO_COL  = 6
@@ -121,11 +121,7 @@ class App(tk.Tk):
         self._build()
 
     def _apply_style(self):
-        s = ttk.Style(self)
-        s.theme_use('clam')
-        s.configure('Bar.Horizontal.TProgressbar',
-                    troughcolor=BORDER, background=PRIMARY,
-                    thickness=4, borderwidth=0, relief='flat')
+        ttk.Style(self).theme_use('clam')
 
     def _build(self):
         outer = tk.Frame(self, bg=BG)
@@ -160,10 +156,6 @@ class App(tk.Tk):
                   relief='flat', bd=0, padx=14, pady=6, cursor='hand2',
                   command=self._browse).pack(side='right')
 
-        self.bar = ttk.Progressbar(inner, style='Bar.Horizontal.TProgressbar',
-                                    mode='indeterminate')
-        self.bar.pack(fill='x', pady=(0, 8))
-
         self.status_var = tk.StringVar(value="파일을 선택하면 업로드 버튼이 활성화됩니다.")
         self.status_lbl = tk.Label(inner, textvariable=self.status_var,
                                     font=("맑은 고딕", 9), bg=SURFACE, fg=MUTED, anchor='w')
@@ -194,7 +186,6 @@ class App(tk.Tk):
         if not self._full_path:
             return
         self.btn.configure(state='disabled', bg='#cbd5e1')
-        self.bar.start(10)
         self._set_status("파일 열기 중...", MUTED)
         self.update()
         try:
@@ -211,24 +202,42 @@ class App(tk.Tk):
             cnt = len(records)
             self._set_status(f"업로드 중... ({cnt}일치)", MUTED)
             self.update()
-            upload_to_supabase(records)
             from datetime import date as _date
-            if _date.today().isoformat() in [r['sale_date'] for r in records]:
+            today_iso = _date.today().isoformat()
+            today_recs = [r for r in records if r['sale_date'] == today_iso]
+
+            # 업로드 전 오늘 기존 값 조회
+            prev_net = None
+            if today_recs:
                 try:
-                    req = urllib.request.Request(
-                        f'{VERCEL_BASE}/api/notify-sales', method='POST',
-                        headers={'Content-Type': 'application/json'},
-                        data=b'{}',
-                    )
-                    urllib.request.urlopen(req, timeout=10)
+                    _h = {'apikey': SUPABASE_KEY, 'Authorization': f'Bearer {SUPABASE_KEY}'}
+                    _url = f"{SUPABASE_URL}/rest/v1/sales_data?sale_date=eq.{today_iso}&select=amount,returns"
+                    with urllib.request.urlopen(urllib.request.Request(_url, headers=_h), timeout=10) as _r:
+                        _existing = json.loads(_r.read().decode())
+                    prev_net = sum((x.get('amount') or 0) - (x.get('returns') or 0) for x in _existing) if _existing else None
                 except Exception:
                     pass
+
+            upload_to_supabase(records)
+
+            # 오늘 값이 실제 변경됐을 때만 알림 발송
+            if today_recs:
+                new_net = sum(r['amount'] - (r.get('returns') or 0) for r in today_recs)
+                if prev_net != new_net:
+                    try:
+                        req = urllib.request.Request(
+                            f'{VERCEL_BASE}/api/notify-sales', method='POST',
+                            headers={'Content-Type': 'application/json'},
+                            data=b'{}',
+                        )
+                        urllib.request.urlopen(req, timeout=10)
+                    except Exception:
+                        pass
             self._done(True, f"{cnt}일치 매출 데이터가 업로드되었습니다.")
         except Exception as e:
             self._done(False, f"오류: {e}")
 
     def _done(self, ok, msg):
-        self.bar.stop()
         self.btn.configure(state='normal', bg=PRIMARY)
         self._set_status(msg, SUCCESS if ok else ERROR)
         if ok:

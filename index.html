@@ -2242,14 +2242,27 @@
       const dates = toInsert.map(r => r.sale_date);
       const minDate = dates.reduce((a, b) => a < b ? a : b);
       const maxDate = dates.reduce((a, b) => a > b ? a : b);
+
+      // 오늘 날짜가 포함되면 업로드 전 기존 값 조회
+      const todayStr = new Date().toLocaleDateString('sv-SE');
+      let prevTodayNet = null;
+      if (allDates.has(todayStr)) {
+        const { data: prev } = await sb.from('sales_data').select('amount,returns').eq('sale_date', todayStr);
+        prevTodayNet = prev && prev.length ? (prev[0].amount || 0) - (prev[0].returns || 0) : null;
+      }
+
       const { error: delError } = await sb.from('sales_data')
         .delete().gte('sale_date', minDate).lte('sale_date', maxDate);
       if (delError) { alert('업로드 실패: ' + delError.message); return; }
       const { error } = await sb.from('sales_data').insert(toInsert);
       if (error) { alert('업로드 실패: ' + error.message); return; }
       alert(`${toInsert.length}일 매출 데이터 업로드 완료`);
-      const todayStr = new Date().toISOString().slice(0, 10);
-      if (allDates.has(todayStr)) fetch('/api/notify-sales', { method: 'POST' }).catch(() => {});
+
+      // 오늘 값이 실제로 변경됐을 때만 알림 발송
+      if (allDates.has(todayStr)) {
+        const newTodayNet = (dailySales[todayStr] || 0) - (dailyReturns[todayStr] || 0);
+        if (prevTodayNet !== newTodayNet) fetch('/api/notify-sales', { method: 'POST' }).catch(() => {});
+      }
       await loadSalesData(curYear, curMonth);
       renderGrid(curYear, curMonth, []);
     } catch (e) {
