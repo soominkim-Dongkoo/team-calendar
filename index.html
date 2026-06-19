@@ -1227,8 +1227,8 @@
       /* 모바일 그리드: 셀 고정 크기 */
       .days-grid { grid-template-rows: repeat(6, minmax(0, 1fr)); }
       .day-cell { min-height:0; padding:3px; overflow:hidden; }
-      .sales-daily { bottom: 24px; font-size: 13px; }
-      .sales-cumulative { font-size: 9px; }
+      .sales-daily { bottom: 24px; font-size: 13px; white-space: nowrap; }
+      .sales-cumulative { font-size: 9px; white-space: nowrap; }
       .chips-wrap.clipped { max-height:68px; transition:max-height 0.4s ease-in-out; }
       .chip-more { font-size:9px; line-height:1.2; padding:0 2px; white-space:nowrap; touch-action:manipulation; }
       .event-chip { height:18px; font-size:10px; padding:0 4px; }
@@ -1294,8 +1294,8 @@
     body.simulate-mobile .day-timeline-wrap { max-height: calc(100vh - 196px); }
     body.simulate-mobile .days-grid { grid-template-rows: repeat(6, minmax(0, 1fr)); }
     body.simulate-mobile .day-cell { min-height:0; padding:3px; overflow:hidden; }
-    body.simulate-mobile .sales-daily { bottom: 24px; font-size: 13px; }
-    body.simulate-mobile .sales-cumulative { font-size: 9px; }
+    body.simulate-mobile .sales-daily { bottom: 24px; font-size: 13px; white-space: nowrap; }
+    body.simulate-mobile .sales-cumulative { font-size: 9px; white-space: nowrap; }
     body.simulate-mobile .chips-wrap.clipped { max-height:68px; transition:max-height 0.4s ease-in-out; }
     body.simulate-mobile .chip-more { font-size:9px; line-height:1.2; padding:0 2px; white-space:nowrap; touch-action:manipulation; }
     body.simulate-mobile .event-chip { height:18px; font-size:10px; padding:0 4px; }
@@ -2136,6 +2136,21 @@
     }
 
     applyCurrentView();
+    if (isMobile()) requestAnimationFrame(fitSalesText);
+  }
+
+  function fitSalesText() {
+    document.querySelectorAll('#days-grid .sales-daily, #days-grid .sales-cumulative').forEach(el => {
+      const cell = el.closest('.day-cell');
+      if (!cell) return;
+      el.style.fontSize = '';
+      const cellLeft = cell.getBoundingClientRect().left;
+      let size = parseFloat(getComputedStyle(el).fontSize);
+      while (size > 6 && el.getBoundingClientRect().left < cellLeft + 1) {
+        size -= 0.5;
+        el.style.fontSize = size + 'px';
+      }
+    });
   }
 
   const EVENT_TYPE_CHIP = { company: 'chip-company', meeting: 'chip-meeting', work: 'chip-work', personal: 'chip-personal' };
