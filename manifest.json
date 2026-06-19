@@ -1,6 +1,6 @@
 {
-  "name": "경영기획팀 캘린더",
-  "short_name": "팀 캘린더",
+  "name": "DK_Calendar",
+  "short_name": "DK_Calendar",
   "description": "동국바이오제약 경영기획팀 일정 공유 캘린더",
   "start_url": "/",
   "display": "standalone",
