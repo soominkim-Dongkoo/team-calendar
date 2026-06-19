@@ -61,10 +61,26 @@ def send_push(user_ids):
     if not subs:
         return 0
 
-    today_str = date.today().strftime('%-m월 %-d일')
+    today = date.today()
+    today_iso   = today.isoformat()
+    month_start = today.replace(day=1).isoformat()
+
+    daily_rows = sb_get('sales_data', [('select', 'amount,returns'), ('sale_date', f'eq.{today_iso}')])
+    month_rows = sb_get('sales_data', [('select', 'amount,returns'), ('sale_date', f'gte.{month_start}'), ('sale_date', f'lte.{today_iso}')])
+
+    def net(rows):
+        return sum((r.get('amount', 0) or 0) - (r.get('returns', 0) or 0) for r in (rows or []))
+
+    def fmt(won):
+        return f'{won / 1e8:.1f}억'
+
+    daily_net   = net(daily_rows)
+    monthly_net = net(month_rows)
+
+    today_str = today.strftime('%-m월 %-d일')
     payload = json.dumps({
         'title': '📊 매출 업데이트',
-        'body':  f'{today_str} 매출 데이터가 업데이트되었습니다.',
+        'body':  f'{today_str} 매출 데이터가 업데이트되었습니다.\n당일 : {fmt(daily_net)}\n누적 : {fmt(monthly_net)}',
         'url':   '/',
     }, ensure_ascii=False)
 
