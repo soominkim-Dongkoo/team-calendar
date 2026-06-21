@@ -82,6 +82,19 @@ def sb_patch(table, row_id, data):
         data=data,
     )
 
+def sb_insert_history(user_ids, title, body):
+    rows = [{'user_id': uid, 'title': title, 'body': body} for uid in user_ids]
+    req = urllib.request.Request(
+        f'{SB_URL}/rest/v1/notification_history',
+        data=json.dumps(rows, ensure_ascii=False).encode(),
+        headers={**_sb_headers(), 'Prefer': 'return=minimal'},
+        method='POST',
+    )
+    try:
+        urllib.request.urlopen(req, timeout=10)
+    except Exception:
+        pass
+
 def sb_delete(table, row_id):
     req = urllib.request.Request(
         f'{SB_URL}/rest/v1/{table}?id=eq.{row_id}',
@@ -125,11 +138,10 @@ def send_push(subscriptions, reminder, is_team):
         return
     time_str = (reminder.get('start_time') or '')[:5] or '종일'
     label = '팀 일정' if is_team else '개인 일정'
-    payload = json.dumps({
-        'title': f'🔔 {label} 알림',
-        'body': f'일정 : {reminder["title"]}\n시간 : {reminder["start_date"]} {time_str}',
-        'url': '/',
-    }, ensure_ascii=False)
+    title = f'🔔 {label} 알림'
+    body  = f'일정 : {reminder["title"]}\n시간 : {reminder["start_date"]} {time_str}'
+    payload = json.dumps({'title': title, 'body': body, 'url': '/'}, ensure_ascii=False)
+    sent_user_ids = []
     for sub in subscriptions:
         try:
             webpush(
@@ -141,11 +153,14 @@ def send_push(subscriptions, reminder, is_team):
                 vapid_private_key=VAPID_PRIVATE_KEY,
                 vapid_claims={'sub': VAPID_SUBJECT},
             )
+            sent_user_ids.append(sub['user_id'])
         except WebPushException as ex:
             status = ex.response.status_code if ex.response is not None else None
             print(f'[push] failed endpoint={sub["endpoint"][:50]} status={status} error={ex}')
             if status in (404, 410):
                 sb_delete('push_subscriptions', sub['id'])
+    if sent_user_ids:
+        sb_insert_history(sent_user_ids, title, body)
 
 class handler(BaseHTTPRequestHandler):
 
