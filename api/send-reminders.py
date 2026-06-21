@@ -94,6 +94,22 @@ def sb_insert_history(user_ids, title, body):
         urllib.request.urlopen(req, timeout=10)
     except Exception:
         pass
+    for uid in user_ids:
+        sb_trim_history(uid)
+
+def sb_trim_history(user_id, keep=5):
+    rows = sb_get('notification_history', [('select', 'id'), ('user_id', f'eq.{user_id}'), ('order', 'created_at.desc')])
+    if len(rows) > keep:
+        ids = ','.join(r['id'] for r in rows[keep:])
+        req = urllib.request.Request(
+            f'{SB_URL}/rest/v1/notification_history?id=in.({ids})',
+            headers=_sb_headers(),
+            method='DELETE',
+        )
+        try:
+            urllib.request.urlopen(req, timeout=10)
+        except Exception:
+            pass
 
 def sb_delete(table, row_id):
     req = urllib.request.Request(
