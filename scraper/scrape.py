@@ -4,13 +4,19 @@ import sys
 import re
 from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
-from supabase import create_client
+import httpx
+from supabase import create_client, Client
+from supabase.client import ClientOptions
 
 sys.stdout.reconfigure(encoding='utf-8')
 load_dotenv()
 
 DAOU_URL = os.getenv("DAOU_URL")
-supabase  = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
+supabase  = create_client(
+    os.getenv("SUPABASE_URL"),
+    os.getenv("SUPABASE_KEY"),
+    options=ClientOptions(httpx_client=httpx.Client(http2=False)),
+)
 
 
 # ── DB 헬퍼 ─────────────────────────────────────────────────────────────────

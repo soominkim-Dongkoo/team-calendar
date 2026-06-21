@@ -7,7 +7,9 @@ import os, sys
 from datetime import date, timedelta
 from dotenv import load_dotenv
 import requests
+import httpx
 from supabase import create_client
+from supabase.client import ClientOptions
 
 sys.stdout.reconfigure(encoding='utf-8')
 load_dotenv()
@@ -19,7 +21,11 @@ OWNER        = 'system_calendar'
 CALENDAR_ID  = 10   # 전사일정 (11은 휴일일정 → 제외)
 DAYS_AHEAD   = 45
 
-supabase = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_KEY'))
+supabase = create_client(
+    os.getenv('SUPABASE_URL'),
+    os.getenv('SUPABASE_KEY'),
+    options=ClientOptions(httpx_client=httpx.Client(http2=False)),
+)
 
 
 FIXED_USER_ID = '20230005'  # 김수민
