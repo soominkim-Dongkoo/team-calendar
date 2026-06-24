@@ -150,15 +150,29 @@ def send_slack(channel, reminder, is_team):
     print(f'[slack] channel={channel} ok={result.get("ok")} error={result.get("error")}')
 
 def send_push(subscriptions, reminder, is_team):
-    if not VAPID_PRIVATE_KEY or not _WEBPUSH_OK:
+    if not VAPID_PRIVATE_KEY or not _WEBPUSH_OK or not subscriptions:
         return
     time_str = (reminder.get('start_time') or '')[:5] or '종일'
     label = '팀 일정' if is_team else '개인 일정'
     title = f'🔔 {label} 알림'
     body  = f'일정 : {reminder["title"]}\n시간 : {reminder["start_date"]} {time_str}'
-    payload = json.dumps({'title': title, 'body': body, 'url': '/'}, ensure_ascii=False)
-    sent_user_ids = []
+
+    # history 먼저 insert → 정확한 미읽음 수 계산
+    sub_user_ids = list({sub['user_id'] for sub in subscriptions})
+    sb_insert_history(sub_user_ids, title, body)
+
+    ids_str = ','.join(sub_user_ids)
+    unread_rows = sb_get('notification_history', [
+        ('select', 'user_id'),
+        ('user_id', f'in.({ids_str})'),
+        ('is_read', 'eq.false'),
+    ])
+    from collections import Counter
+    unread_counts = Counter(r['user_id'] for r in (unread_rows or []))
+
     for sub in subscriptions:
+        badge_n = unread_counts.get(sub['user_id'], 1)
+        payload = json.dumps({'title': title, 'body': body, 'url': '/', 'badge': badge_n}, ensure_ascii=False)
         try:
             webpush(
                 subscription_info={
@@ -169,14 +183,11 @@ def send_push(subscriptions, reminder, is_team):
                 vapid_private_key=VAPID_PRIVATE_KEY,
                 vapid_claims={'sub': VAPID_SUBJECT},
             )
-            sent_user_ids.append(sub['user_id'])
         except WebPushException as ex:
             status = ex.response.status_code if ex.response is not None else None
             print(f'[push] failed endpoint={sub["endpoint"][:50]} status={status} error={ex}')
             if status in (404, 410):
                 sb_delete('push_subscriptions', sub['id'])
-    if sent_user_ids:
-        sb_insert_history(sent_user_ids, title, body)
 
 class handler(BaseHTTPRequestHandler):
 

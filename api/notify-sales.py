@@ -110,10 +110,22 @@ def send_push(user_ids):
 
     push_title = '📊 매출 업데이트'
     push_body  = f'{today_str} 매출 데이터가 업데이트되었습니다.\n당일 : {fmt(daily_net)}\n누적 : {fmt(monthly_net)}'
-    payload = json.dumps({'title': push_title, 'body': push_body, 'url': '/'}, ensure_ascii=False)
+
+    # history 먼저 insert → 정확한 미읽음 수 계산
+    sb_insert_history(user_ids, push_title, push_body)
+
+    unread_rows = sb_get('notification_history', [
+        ('select', 'user_id'),
+        ('user_id', f'in.({ids_str})'),
+        ('is_read', 'eq.false'),
+    ])
+    from collections import Counter
+    unread_counts = Counter(r['user_id'] for r in (unread_rows or []))
 
     sent = 0
     for sub in subs:
+        badge_n = unread_counts.get(sub['user_id'], 1)
+        payload = json.dumps({'title': push_title, 'body': push_body, 'url': '/', 'badge': badge_n}, ensure_ascii=False)
         try:
             webpush(
                 subscription_info={
@@ -130,8 +142,6 @@ def send_push(user_ids):
             if status in (404, 410):
                 sb_delete_sub(sub['id'])
 
-    if sent > 0:
-        sb_insert_history(user_ids, push_title, push_body)
     return sent
 
 
