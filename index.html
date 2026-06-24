@@ -2004,7 +2004,7 @@
       const dateStr = `${y2}-${pad(m2)}-${pad(num)}`;
       el.dataset.date = dateStr;
       if (_selectedDayStr === dateStr) el.classList.add('selected-day');
-      el.addEventListener('click', () => openDayView(dateStr));
+      el.addEventListener('click', () => { if (currentView !== 'sales') openDayView(dateStr); });
 
       grid.appendChild(el);
     }
