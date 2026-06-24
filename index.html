@@ -3874,6 +3874,7 @@
     navigator.serviceWorker.register('/sw.js');
     navigator.serviceWorker.addEventListener('message', e => {
       if (e.data?.type === 'navigate' && e.data.view) setView(e.data.view);
+      if (e.data?.type === 'push-received') loadNotifBadge();
     });
   }
 

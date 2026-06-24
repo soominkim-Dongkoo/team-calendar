@@ -1,4 +1,4 @@
-const CACHE = 'teamcal-v6';
+const CACHE = 'teamcal-v7';
 const STATIC = ['/manifest.json', '/dongkoo-logo_2.svg', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -67,7 +67,11 @@ self.addEventListener('push', e => {
     ? updateBadge(data.badge)
     : getBadgeCount().then(n => updateBadge(n + 1));
   e.waitUntil(
-    setBadge.then(() => self.registration.showNotification(title, options))
+    setBadge
+      .then(() => self.registration.showNotification(title, options))
+      .then(() => self.clients.matchAll({ type: 'window' }).then(clients => {
+        clients.forEach(c => c.postMessage({ type: 'push-received' }));
+      }))
   );
 });
 
