@@ -1484,7 +1484,7 @@
         <button onclick="moveMonth(1)">›</button>
       </div>
       <div class="cal-header-right">
-        <button class="btn-add cal-add-btn" onclick="openModal()">+ 일정 추가</button>
+        <button class="btn-add cal-add-btn" onclick="openModal(_selectedDayStr)">+ 일정 추가</button>
       </div>
     </div>
 
@@ -3567,9 +3567,9 @@
 
   let _editingId = null;
 
-  function openModal() {
+  function openModal(dateStr) {
     _editingId = null;
-    const today = `${curYear}-${pad(curMonth+1)}-${pad(new Date().getDate())}`;
+    const today = dateStr || `${curYear}-${pad(curMonth+1)}-${pad(new Date().getDate())}`;
     document.getElementById('modal-title').textContent = '일정 추가';
     document.getElementById('ev-title').value = '';
     setEvType('meeting');
