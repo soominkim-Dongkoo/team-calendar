@@ -3358,20 +3358,17 @@
   async function loadNotifBadge() {
     if (!currentUser?.user_id) return;
     const { data } = await sb.from('notification_history')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', currentUser.user_id)
-      .eq('is_read', false);
-    const badge = document.getElementById('btn-notif-badge');
-    if (!badge) return;
-    const count = data === null ? 0 : (typeof data === 'number' ? data : 0);
-    // count는 head:true 시 null로 오므로 별도 count 쿼리
-    const res = await sb.from('notification_history')
       .select('id')
       .eq('user_id', currentUser.user_id)
       .eq('is_read', false);
-    const n = res.data ? res.data.length : 0;
-    badge.textContent = n;
-    badge.style.display = n > 0 ? 'flex' : 'none';
+    const n = data ? data.length : 0;
+    // 🔔 UI 배지
+    const badge = document.getElementById('btn-notif-badge');
+    if (badge) { badge.textContent = n; badge.style.display = n > 0 ? 'flex' : 'none'; }
+    // 앱 아이콘 배지 — DB 실제 미읽음 수로 동기화
+    if ('setAppBadge' in navigator) {
+      n > 0 ? navigator.setAppBadge(n).catch(() => {}) : navigator.clearAppBadge().catch(() => {});
+    }
   }
 
   async function openNotifHistory() {
