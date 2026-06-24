@@ -3385,7 +3385,7 @@
       .select('*')
       .eq('user_id', currentUser.user_id)
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(10);
 
     if (!data || data.length === 0) {
       list.innerHTML = '<div class="notif-empty">알림 내역이 없습니다.</div>';

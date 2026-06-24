@@ -97,7 +97,7 @@ def sb_insert_history(user_ids, title, body):
     for uid in user_ids:
         sb_trim_history(uid)
 
-def sb_trim_history(user_id, keep=5):
+def sb_trim_history(user_id, keep=10):
     rows = sb_get('notification_history', [('select', 'id'), ('user_id', f'eq.{user_id}'), ('order', 'created_at.desc')])
     if len(rows) > keep:
         ids = ','.join(r['id'] for r in rows[keep:])
