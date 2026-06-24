@@ -3872,7 +3872,14 @@
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js');
+    navigator.serviceWorker.addEventListener('message', e => {
+      if (e.data?.type === 'navigate' && e.data.view) setView(e.data.view);
+    });
   }
+
+  // 알림 클릭으로 앱이 열린 경우 URL 파라미터로 뷰 전환
+  const _urlView = new URLSearchParams(location.search).get('view');
+  if (_urlView === 'sales' || _urlView === 'schedule') setView(_urlView);
 
 
 

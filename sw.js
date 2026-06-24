@@ -74,10 +74,14 @@ self.addEventListener('push', e => {
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   const url = (e.notification.data && e.notification.data.url) || '/';
+  const view = new URL(url, self.location.origin).searchParams.get('view');
   e.waitUntil(
     self.clients.matchAll({ type: 'window' }).then(clients => {
       for (const client of clients) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) return client.focus();
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          if (view) client.postMessage({ type: 'navigate', view });
+          return client.focus();
+        }
       }
       return self.clients.openWindow(url);
     })

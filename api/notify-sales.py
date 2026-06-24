@@ -125,7 +125,7 @@ def send_push(user_ids):
     sent = 0
     for sub in subs:
         badge_n = unread_counts.get(sub['user_id'], 1)
-        payload = json.dumps({'title': push_title, 'body': push_body, 'url': '/', 'badge': badge_n}, ensure_ascii=False)
+        payload = json.dumps({'title': push_title, 'body': push_body, 'url': '/?view=sales', 'badge': badge_n}, ensure_ascii=False)
         try:
             webpush(
                 subscription_info={

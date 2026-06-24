@@ -172,7 +172,7 @@ def send_push(subscriptions, reminder, is_team):
 
     for sub in subscriptions:
         badge_n = unread_counts.get(sub['user_id'], 1)
-        payload = json.dumps({'title': title, 'body': body, 'url': '/', 'badge': badge_n}, ensure_ascii=False)
+        payload = json.dumps({'title': title, 'body': body, 'url': '/?view=schedule', 'badge': badge_n}, ensure_ascii=False)
         try:
             webpush(
                 subscription_info={
