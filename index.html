@@ -2323,7 +2323,8 @@
 
     const [leaveRes, evRes] = await Promise.all([
       sb.from('leave_records').select('*')
-        .lte('start_date', last).gte('end_date', first).gte('start_date', '2026-01-01'),
+        .lte('start_date', last).gte('end_date', first).gte('start_date', '2026-01-01')
+        .eq('owner_user_id', currentUser.user_id),
       sb.from('manual_events').select('*')
         .lte('start_date', last).gte('end_date', first).order('created_at', { ascending: true })
     ]);
