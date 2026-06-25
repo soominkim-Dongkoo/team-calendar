@@ -38,9 +38,9 @@ def load_scrape_targets():
         targets.append(u)
     return targets
 
-def load_existing_doc_ids():
-    res = supabase.table("leave_records").select("doc_id,doc_url").execute()
-    return {row["doc_id"] for row in res.data if row.get("doc_url")}
+def load_existing_doc_ids(owner_user_id):
+    res = supabase.table("leave_records").select("doc_id").eq("owner_user_id", owner_user_id).execute()
+    return {row["doc_id"] for row in (res.data or [])}
 
 def load_processed_cancel_ids():
     res = supabase.table("cancel_records").select("doc_id").execute()
@@ -439,14 +439,14 @@ def scrape():
 
     print(f"스크래핑 대상 {len(targets)}명: {[t['user_id'] for t in targets]}")
 
-    existing_doc_ids     = load_existing_doc_ids()
     processed_cancel_ids = load_processed_cancel_ids()
     total_new = 0
     total_cancel = 0
 
     for user in targets:
+        existing_doc_ids = load_existing_doc_ids(user["user_id"])
         print(f"\n{'='*50}")
-        print(f"유저: {user['user_id']} ({len(user['daou_folders'])}개 폴더)")
+        print(f"유저: {user['user_id']} ({len(user['daou_folders'])}개 폴더, 기존 {len(existing_doc_ids)}건)")
         n, c = scrape_user(
             user["user_id"],
             user["password"],
