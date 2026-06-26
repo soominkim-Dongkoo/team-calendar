@@ -1715,6 +1715,16 @@
       </div>
     </div>
 
+    <div class="form-group" id="ev-reserve-group" style="display:none;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        회의실 예약
+        <label class="toggle-switch" style="margin-bottom:0;">
+          <input type="checkbox" id="ev-reserve-toggle" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
     <div class="form-row">
       <div class="form-group">
         <label>시작일</label>
@@ -3530,6 +3540,7 @@
 
   function toggleRoomField() {
     document.getElementById('ev-room-group').style.display = '';
+    document.getElementById('ev-reserve-group').style.display = '';
   }
 
   const _TYPE_META = {
@@ -3578,6 +3589,7 @@
     setTimeStr('start', '08:00');
     setTimeStr('end', '09:00');
     document.getElementById('ev-room').value = '';
+    document.getElementById('ev-reserve-toggle').checked = false;
     setReminderFields(null);
     document.getElementById('ev-desc').value = '';
     document.getElementById('ev-error').textContent = '';
@@ -3600,6 +3612,7 @@
     setTimeStr('start', r.start_time || '08:00');
     setTimeStr('end', r.end_time || '09:00');
     document.getElementById('ev-room').value = r.meeting_room || '';
+    document.getElementById('ev-reserve-toggle').checked = !!(r.daou_reservation_id);
     setReminderFields(r.reminder_at || null);
     document.getElementById('ev-desc').value = r.description || '';
     document.getElementById('ev-error').textContent = '';
@@ -3787,9 +3800,10 @@
 
     const isTeam = ['company', 'meeting'].includes(type);
 
-    // 회의실 선택 시: 다우오피스 예약 먼저 → 실패하면 저장 중단
+    // 회의실 예약 토글 ON 시: 다우오피스 예약 먼저 → 실패하면 저장 중단
     let daouResvId = null;
-    if (room && st && et) {
+    const doReserve = document.getElementById('ev-reserve-toggle').checked;
+    if (room && st && et && doReserve) {
       if (!_daouSession) { showDaouLogin(() => saveEvent()); return; }
       const prevResvId = _editingId ? (_detailRecord?.daou_reservation_id ?? null) : null;
       const method = prevResvId ? 'PUT' : 'POST';
