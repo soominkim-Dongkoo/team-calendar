@@ -533,7 +533,7 @@
 
     /* ── 관리자 설정 패널 ── */
     #admin-settings-overlay { display:none; position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,0.45); }
-    .admin-settings-panel { position:absolute; top:0; right:0; bottom:0; width:680px; max-width:100vw; background:var(--surface); display:flex; flex-direction:column; box-shadow:-4px 0 24px rgba(0,0,0,0.18); }
+    .admin-settings-panel { position:absolute; top:0; right:0; bottom:0; width:900px; max-width:100vw; background:var(--surface); display:flex; flex-direction:column; box-shadow:-4px 0 24px rgba(0,0,0,0.18); }
     .admin-settings-hdr { display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--surface); z-index:1; }
     .admin-settings-hdr h2 { font-size:17px; font-weight:700; margin:0; }
     .admin-settings-hdr button { border:none; background:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1; }
@@ -2342,7 +2342,14 @@
     ]);
 
     const leaves = (leaveRes.data || []).map(r => ({ ...r, _source: 'leave', _chipClass: 'chip-vacation' }));
-    const events = (evRes.data || []).map(r => ({ ...r, _source: 'event', _chipClass: EVENT_TYPE_CHIP[r.event_type] || 'chip-work' }));
+    const events = (evRes.data || []).filter(r => {
+      if (!r.is_team) return String(r.owner) === String(currentUser.user_id);
+      if (r.event_type === 'company') return true; // 전사회의 항상 전원 표시
+      if (!r.visibility) return true; // 구버전 이벤트
+      if (r.visibility === 'division') return currentUser.division && r.owner_division === currentUser.division;
+      if (r.visibility === 'team')     return currentUser.team     && r.owner_team     === currentUser.team;
+      return true;
+    }).map(r => ({ ...r, _source: 'event', _chipClass: EVENT_TYPE_CHIP[r.event_type] || 'chip-work' }));
 
     _cachedData = [...leaves, ...events];
     renderGrid(year, month, _cachedData);
@@ -2517,6 +2524,66 @@
     }
   });
 
+  let _orgUnitsCache = null;
+  async function getOrgUnits() {
+    if (_orgUnitsCache) return _orgUnitsCache;
+    const { data } = await sb.from('org_units').select('*').order('id');
+    _orgUnitsCache = data || [];
+    return _orgUnitsCache;
+  }
+
+  async function populateTeamDropdown(selectId, selectedId) {
+    const units = await getOrgUnits();
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
+    const divisions = units.filter(u => u.type === 'division');
+    sel.innerHTML = '<option value="">선택 안함</option>';
+    divisions.forEach(div => {
+      const divOpt = document.createElement('option');
+      divOpt.value = div.id;
+      divOpt.textContent = `${div.name} (본부장)`;
+      if (String(selectedId) === String(div.id)) divOpt.selected = true;
+      sel.appendChild(divOpt);
+      const teams = units.filter(u => u.type === 'team' && u.parent_id === div.id);
+      teams.forEach(team => {
+        const opt = document.createElement('option');
+        opt.value = team.id;
+        opt.textContent = `└ ${team.name}`;
+        if (String(selectedId) === String(team.id)) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    });
+  }
+
+  function deriveOrgInfo(units, teamUnitId) {
+    if (!teamUnitId) return { team: null, division: null };
+    const unit = units.find(u => u.id === Number(teamUnitId));
+    if (!unit) return { team: null, division: null };
+    if (unit.type === 'division') return { team: null, division: unit.name };
+    const div = units.find(u => u.id === unit.parent_id);
+    return { team: unit.name, division: div?.name || null };
+  }
+
+  async function enrichCurrentUser() {
+    if (!currentUser) return;
+    const { data } = await sb.from('users')
+      .select('position, team_unit_id, team, division')
+      .eq('user_id', currentUser.user_id)
+      .single();
+    if (!data) return;
+    currentUser.position = data.position;
+    if (data.team_unit_id) {
+      const units = await getOrgUnits();
+      const { team, division } = deriveOrgInfo(units, data.team_unit_id);
+      currentUser.team     = team     ?? data.team;
+      currentUser.division = division ?? data.division;
+      currentUser.team_unit_id = data.team_unit_id;
+    } else {
+      currentUser.team     = data.team;
+      currentUser.division = data.division;
+    }
+  }
+
   async function doLogin() {
     const id = document.getElementById('login-id').value.trim();
     const pw = document.getElementById('login-pw').value;
@@ -2530,8 +2597,10 @@
       return;
     }
     currentUser = data;
+    await enrichCurrentUser();
     const keep = document.getElementById('login-keep').checked;
-    (keep ? localStorage : sessionStorage).setItem('calUser', JSON.stringify(data));
+    (keep ? localStorage : sessionStorage).setItem('calUser', JSON.stringify(currentUser));
+
     document.getElementById('login-overlay').classList.remove('open');
 
     if (data.needs_setup) {
@@ -3841,6 +3910,14 @@
       }
     }
 
+    // 팀 일정 visibility 결정
+    let visibility = null, ownerTeam = null, ownerDivision = null;
+    if (isTeam) {
+      ownerTeam     = currentUser?.team     || null;
+      ownerDivision = currentUser?.division || null;
+      visibility    = currentUser?.division && !currentUser?.team ? 'division' : 'team';
+    }
+
     const payload = {
       title, description: desc, event_type: type,
       start_date: start, end_date: end,
@@ -3849,6 +3926,7 @@
       team: isTeam ? (currentUser?.team || null) : null,
       meeting_room: room,
       reminder_at: reminder,
+      visibility, owner_team: ownerTeam, owner_division: ownerDivision,
       ...(daouResvId !== null ? { daou_reservation_id: daouResvId } : {}),
     };
 
@@ -3930,8 +4008,10 @@
     document.querySelectorAll('.stab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     document.getElementById('settings-holidays').style.display = tab === 'holidays' ? '' : 'none';
     document.getElementById('settings-accounts').style.display = tab === 'accounts'  ? '' : 'none';
+    document.getElementById('settings-org').style.display      = tab === 'org'       ? '' : 'none';
     if (tab === 'holidays') loadSettingsHolidays();
-    if (tab === 'accounts')  loadSettingsUsers();
+    if (tab === 'accounts') loadSettingsUsers();
+    if (tab === 'org')      loadOrgTree();
   }
 
   // 공휴일 CRUD
@@ -3977,22 +4057,107 @@
     const show = s.style.display === 'none' || s.style.display === '';
     s.style.display = show ? 'block' : 'none';
     if (show) {
+      populateTeamDropdown('new-user-team-unit', null);
       const container = document.getElementById('settings-accounts');
       if (container) container.scrollTop = container.scrollHeight;
     }
   }
 
+  async function loadOrgTree() {
+    const container = document.getElementById('org-tree');
+    container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">로딩 중...</p>';
+    const { data, error } = await sb.from('org_units').select('*').order('id');
+    if (error) { container.innerHTML = `<p style="color:#fc8181">${error.message}</p>`; return; }
+    const divisions = (data || []).filter(r => r.type === 'division');
+    const teams     = (data || []).filter(r => r.type === 'team');
+    container.innerHTML = '';
+    if (!divisions.length) {
+      container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">등록된 본부가 없습니다.</p>';
+      return;
+    }
+    divisions.forEach(div => {
+      const divEl = document.createElement('div');
+      divEl.style.cssText = 'margin-bottom:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden;';
+      const hdr = document.createElement('div');
+      hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface-hover);font-weight:700;font-size:14px;';
+      hdr.innerHTML = `<span>${div.name}</span><button onclick="deleteOrgUnit(${div.id})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;padding:0 4px;">×</button>`;
+      divEl.appendChild(hdr);
+      const childTeams = teams.filter(t => t.parent_id === div.id);
+      const body = document.createElement('div');
+      body.style.cssText = 'padding:8px 16px 12px;';
+      childTeams.forEach(team => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-light);';
+        row.innerHTML = `<span style="color:var(--text-muted);font-size:13px;">└</span><span style="font-size:13px;flex:1;">${team.name}</span><button onclick="deleteOrgUnit(${team.id})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:0 4px;">×</button>`;
+        body.appendChild(row);
+      });
+      const addRow = document.createElement('div');
+      addRow.style.cssText = 'display:flex;gap:8px;margin-top:10px;';
+      addRow.innerHTML = `<input type="text" placeholder="팀 이름" style="flex:1;border:1px solid var(--border);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--text-primary);" id="new-team-${div.id}"><button class="btn-sadd" onclick="addOrgTeam(${div.id})">+ 팀 추가</button>`;
+      body.appendChild(addRow);
+      divEl.appendChild(body);
+      container.appendChild(divEl);
+    });
+  }
+
+  function toggleAddDivisionRow(show) {
+    const row = document.getElementById('org-add-division-row');
+    const btn = document.getElementById('btn-add-division');
+    row.style.display = show ? 'flex' : 'none';
+    btn.style.display = show ? 'none' : '';
+    if (show) setTimeout(() => document.getElementById('new-division-input').focus(), 50);
+    else document.getElementById('new-division-input').value = '';
+  }
+
+  async function addOrgDivision() {
+    const name = document.getElementById('new-division-input').value.trim();
+    if (!name) { showToast('본부 이름을 입력해주세요.'); return; }
+    const { error } = await sb.from('org_units').insert({ name, type: 'division', parent_id: null });
+    if (error) { showToast('추가 실패: ' + error.message); return; }
+    _orgUnitsCache = null;
+    toggleAddDivisionRow(false);
+    loadOrgTree();
+  }
+
+  async function addOrgTeam(divisionId) {
+    const input = document.getElementById(`new-team-${divisionId}`);
+    const name = input?.value?.trim();
+    if (!name) { showToast('팀 이름을 입력해주세요.'); return; }
+    const { error } = await sb.from('org_units').insert({ name, type: 'team', parent_id: divisionId });
+    if (error) { showToast('추가 실패: ' + error.message); return; }
+    _orgUnitsCache = null;
+    loadOrgTree();
+  }
+
+  async function deleteOrgUnit(id) {
+    if (!confirm('삭제하시겠습니까? 하위 팀도 함께 삭제됩니다.')) return;
+    await sb.from('org_units').delete().eq('parent_id', id);
+    await sb.from('org_units').delete().eq('id', id);
+    _orgUnitsCache = null;
+    loadOrgTree();
+  }
+
   async function loadSettingsUsers() {
+    const units = await getOrgUnits();
     let { data, error } = await sb.from('users')
-      .select('user_id,name,team,is_admin,sales_notify,daou_folders')
+      .select('user_id,name,team_unit_id,position,is_admin,sales_notify,daou_folders')
       .order('user_id');
     if (error) {
-      // daou_folders 컬럼이 없을 경우 fallback
       ({ data, error } = await sb.from('users')
-        .select('user_id,name,team,is_admin,sales_notify')
+        .select('user_id,name,position,is_admin,sales_notify,daou_folders')
         .order('user_id'));
     }
-    if (error) { document.getElementById('users-tbody').innerHTML = '<tr><td colspan="8" style="color:#fc8181">로딩 실패: ' + error.message + '</td></tr>'; return; }
+    if (error) {
+      ({ data, error } = await sb.from('users')
+        .select('user_id,name,is_admin,sales_notify')
+        .order('user_id'));
+    }
+    // org_units 기반으로 본부/팀 파생
+    if (data) data = data.map(u => {
+      const { team, division } = deriveOrgInfo(units, u.team_unit_id);
+      return { ...u, _team: team, _division: division };
+    });
+    if (error) { document.getElementById('users-tbody').innerHTML = '<tr><td colspan="10" style="color:#fc8181">로딩 실패: ' + error.message + '</td></tr>'; return; }
     _usersCache = data || [];
     const tbody = document.getElementById('users-tbody');
     tbody.innerHTML = '';
@@ -4008,7 +4173,9 @@
       tr.innerHTML = `
         <td>${u.user_id}</td>
         <td>${u.name}</td>
-        <td>${u.team || '<span style="color:var(--text-muted);font-size:12px">-</span>'}</td>
+        <td>${u._division || '<span style="color:var(--text-muted);font-size:12px">-</span>'}</td>
+        <td>${u._team || '<span style="color:var(--text-muted);font-size:12px">-</span>'}</td>
+        <td>${u.position || '<span style="color:var(--text-muted);font-size:12px">-</span>'}</td>
         <td>${foldersHtml}</td>
         <td style="text-align:center"><input type="checkbox" ${u.is_admin ? 'checked' : ''} onchange="updateUserField('${u.user_id}','is_admin',this.checked)"></td>
         <td style="text-align:center"><input type="checkbox" ${u.sales_notify ? 'checked' : ''} onchange="updateUserField('${u.user_id}','sales_notify',this.checked)"></td>
@@ -4019,7 +4186,7 @@
         </td>`;
       tbody.appendChild(tr);
     });
-    if (!_usersCache.length) tbody.innerHTML = '<tr><td colspan="8" style="color:var(--text-muted);text-align:center;padding:20px">등록된 계정이 없습니다</td></tr>';
+    if (!_usersCache.length) tbody.innerHTML = '<tr><td colspan="10" style="color:var(--text-muted);text-align:center;padding:20px">등록된 계정이 없습니다</td></tr>';
   }
 
   function editUser(userId) {
@@ -4036,8 +4203,9 @@
     document.getElementById('edit-user-id-val').value = userId;
     document.getElementById('user-edit-title').textContent = `계정 수정 — ${u.name} (${userId})`;
     document.getElementById('edit-user-name').value = u.name || '';
-    document.getElementById('edit-user-team').value = u.team || '';
+    document.getElementById('edit-user-position').value = u.position || '';
     document.getElementById('edit-user-admin').checked = !!u.is_admin;
+    populateTeamDropdown('edit-user-team-unit', u.team_unit_id);
     const list = document.getElementById('edit-folders-list');
     list.innerHTML = '';
     const folders = Array.isArray(u.daou_folders) ? u.daou_folders : [];
@@ -4113,10 +4281,11 @@
   }
 
   async function saveUserEdit() {
-    const userId = document.getElementById('edit-user-id-val').value;
-    const name   = document.getElementById('edit-user-name').value.trim();
-    const team   = document.getElementById('edit-user-team').value.trim();
-    const isAdmin = document.getElementById('edit-user-admin').checked;
+    const userId     = document.getElementById('edit-user-id-val').value;
+    const name       = document.getElementById('edit-user-name').value.trim();
+    const teamUnitId = document.getElementById('edit-user-team-unit').value || null;
+    const position   = document.getElementById('edit-user-position').value.trim();
+    const isAdmin    = document.getElementById('edit-user-admin').checked;
     if (!name) { alert('이름은 필수입니다.'); return; }
 
     const folders = [];
@@ -4132,7 +4301,8 @@
     const foldersChanged = JSON.stringify(oldFolders) !== JSON.stringify(folders);
 
     const { error } = await sb.from('users').update({
-      name, team: team || null, is_admin: isAdmin, daou_folders: folders
+      name, team_unit_id: teamUnitId ? Number(teamUnitId) : null,
+      position: position || null, is_admin: isAdmin, daou_folders: folders
     }).eq('user_id', userId);
     if (error) { alert('저장 실패: ' + error.message); return; }
 
@@ -4231,10 +4401,11 @@
   }
 
   async function addUser() {
-    const userId  = document.getElementById('new-user-id').value.trim();
-    const name    = document.getElementById('new-user-name').value.trim();
-    const team    = document.getElementById('new-user-team').value.trim();
-    const isAdmin = document.getElementById('new-user-admin').checked;
+    const userId     = document.getElementById('new-user-id').value.trim();
+    const name       = document.getElementById('new-user-name').value.trim();
+    const teamUnitId = document.getElementById('new-user-team-unit').value || null;
+    const position   = document.getElementById('new-user-position').value.trim();
+    const isAdmin    = document.getElementById('new-user-admin').checked;
 
     if (!userId || !name) { alert('사번과 이름은 필수입니다.'); return; }
 
@@ -4246,14 +4417,16 @@
     });
 
     const payload = { user_id: userId, name, password: '1234', is_admin: isAdmin, daou_folders: folders };
-    if (team) payload.team = team;
+    if (teamUnitId) payload.team_unit_id = Number(teamUnitId);
+    if (position)   payload.position     = position;
 
     const { error } = await sb.from('users').insert(payload);
     if (error) { alert('추가 실패: ' + error.message); return; }
 
     document.getElementById('new-user-id').value = '';
     document.getElementById('new-user-name').value = '';
-    document.getElementById('new-user-team').value = '';
+    document.getElementById('new-user-team-unit').value = '';
+    document.getElementById('new-user-position').value = '';
     document.getElementById('new-user-admin').checked = false;
     document.getElementById('new-folders-list').innerHTML = `
       <div class="folder-add-row">
@@ -4279,7 +4452,22 @@
     </div>
     <div class="settings-tabs">
       <button class="stab active" data-tab="accounts" onclick="switchSettingsTab('accounts')">계정</button>
+      <button class="stab" data-tab="org" onclick="switchSettingsTab('org')">조직</button>
       <button class="stab" data-tab="holidays" onclick="switchSettingsTab('holidays')">공휴일</button>
+    </div>
+
+    <!-- 조직 탭 -->
+    <div id="settings-org" class="settings-body" style="display:none;">
+      <p class="settings-section-title">조직 구조</p>
+      <div id="org-tree"></div>
+      <div style="margin-top:20px;">
+        <div id="org-add-division-row" style="display:none;display:none;gap:8px;margin-bottom:10px;" class="settings-add-row">
+          <input type="text" id="new-division-input" placeholder="본부 이름" onkeydown="if(event.key==='Enter')addOrgDivision();if(event.key==='Escape')toggleAddDivisionRow(false);">
+          <button class="btn-sadd" onclick="addOrgDivision()">추가</button>
+          <button class="btn-sact" onclick="toggleAddDivisionRow(false)">취소</button>
+        </div>
+        <button class="btn-sadd" id="btn-add-division" onclick="toggleAddDivisionRow(true)">+ 본부 추가</button>
+      </div>
     </div>
 
     <!-- 공휴일 탭 -->
@@ -4306,7 +4494,9 @@
           <tr>
             <th>사번</th>
             <th>이름</th>
+            <th>본부</th>
             <th>팀</th>
+            <th>직책</th>
             <th>기안폴더</th>
             <th>관리자</th>
             <th>매출알림</th>
@@ -4329,8 +4519,12 @@
           <div class="uaf-val"><input type="text" id="edit-user-name" placeholder="이름 *"></div>
         </div>
         <div class="user-add-field">
-          <label>팀명</label>
-          <div class="uaf-val"><input type="text" id="edit-user-team" placeholder="팀명"></div>
+          <label>팀</label>
+          <div class="uaf-val"><select id="edit-user-team-unit" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--text-primary);"><option value="">선택 안함</option></select></div>
+        </div>
+        <div class="user-add-field">
+          <label>직책</label>
+          <div class="uaf-val"><input type="text" id="edit-user-position" placeholder="직책 입력"></div>
         </div>
         <div class="user-add-field" style="border:none">
           <label style="padding-top:6px">기안폴더</label>
@@ -4368,8 +4562,12 @@
           <div class="uaf-val"><input type="text" id="new-user-name" placeholder="이름 입력 *"></div>
         </div>
         <div class="user-add-field">
-          <label>팀명</label>
-          <div class="uaf-val"><input type="text" id="new-user-team" placeholder="팀명 입력"></div>
+          <label>팀</label>
+          <div class="uaf-val"><select id="new-user-team-unit" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--text-primary);"><option value="">선택 안함</option></select></div>
+        </div>
+        <div class="user-add-field">
+          <label>직책</label>
+          <div class="uaf-val"><input type="text" id="new-user-position" placeholder="직책 입력"></div>
         </div>
         <div class="user-add-field">
           <label>비밀번호</label>
