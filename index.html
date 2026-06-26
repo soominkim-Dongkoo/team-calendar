@@ -2734,6 +2734,7 @@
   };
 
   const DAY_TYPE_RANGE = {
+    '종일':        ['08:30', '17:30'],
     '반차(오전)':  ['08:30', '12:30'],
     '반차(오후)':  ['13:30', '17:30'],
     '반반차(1Q)': ['08:30', '10:30'],
@@ -2768,7 +2769,6 @@
     // 해당 날짜 일정 필터 (currentView + activeTypes 적용)
     const activeTypes = getActiveTypes();
     const all = dedupSchedule((_cachedData || []).filter(r => {
-      if (r._source === 'leave') return false;
       if (r.start_date > dateStr || r.end_date < dateStr) return false;
       if (!activeTypes.has(r._chipClass)) return false;
       if (r._source === 'leave') {
@@ -2784,9 +2784,7 @@
     const allDay = [], timed = [];
     for (const r of all) {
       const isLeave = r._source === 'leave';
-      if (isLeave && r.day_type === '종일') {
-        allDay.push(r);
-      } else if (isLeave && DAY_TYPE_RANGE[r.day_type]) {
+      if (isLeave && DAY_TYPE_RANGE[r.day_type]) {
         const [s, e] = DAY_TYPE_RANGE[r.day_type];
         const [sh, sm] = s.split(':').map(Number);
         const [eh, em] = e.split(':').map(Number);
@@ -2828,7 +2826,12 @@
     });
 
     // ── 겹침 처리: 컬럼 배치 ──
-    timed.sort((a, b) => a.start_min - b.start_min || b.end_min - a.end_min);
+    const _TL_PRIORITY = { company: 0, meeting: 1, work: 2, personal: 3 };
+    timed.sort((a, b) => {
+      const pa = a.r._source === 'leave' ? 4 : (_TL_PRIORITY[a.r.event_type] ?? 3);
+      const pb = b.r._source === 'leave' ? 4 : (_TL_PRIORITY[b.r.event_type] ?? 3);
+      return pa - pb || a.start_min - b.start_min || b.end_min - a.end_min;
+    });
     const cols = [];
     timed.forEach(ev => {
       let c = cols.findIndex(col => col[col.length - 1].end_min <= ev.start_min);
