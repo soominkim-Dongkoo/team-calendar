@@ -1284,7 +1284,9 @@
     body.simulate-mobile sidebar { display:none !important; }
     body.simulate-mobile .calendar-area { padding: 10px 12px 0; }
     body.simulate-mobile .detail-popup { width: 270px; max-width: calc(100vw - 24px); box-sizing: border-box; }
-    body.simulate-mobile .reminder-date-input { width: 100%; box-sizing: border-box; flex-basis: 100%; }
+    body.simulate-mobile .reminder-date-input { width: 100%; box-sizing: border-box; flex-basis: 100%; zoom: 0.82; }
+    body.simulate-mobile .reminder-wrap input[type="date"] { font-size: calc(1em - 0.5px); }
+    body.simulate-mobile .reminder-wrap input[type="date"]::-webkit-calendar-picker-indicator { display: none; }
     body.simulate-mobile .reminder-time-row { flex-basis: 100%; }
     body.simulate-mobile .btn-simulate-mobile { display:none !important; }
     body.simulate-mobile #darkToggle { display:none !important; }
