@@ -497,6 +497,7 @@
     }
 
     .day-cell.other-month .day-num { color: var(--text-faint); }
+    .day-cell.other-month .event-chip { opacity: 0.4; }
     .day-cell.sunday .day-num { color: #fc8181; }
     .day-cell.saturday .day-num { color: #63b3ed; }
     .day-cell.today.sunday .day-num,
@@ -2319,6 +2320,21 @@
     const first = `${year}-${pad(month+1)}-01`;
     const lastDay = new Date(year, month + 1, 0).getDate();
     const last  = `${year}-${pad(month+1)}-${pad(lastDay)}`;
+    // 그리드에 보이는 이전/다음 달 trailing 날짜까지 fetch 범위 확장
+    const firstDow = new Date(year, month, 1).getDay();
+    const totalRows = Math.ceil((firstDow + lastDay) / 7);
+    const trailingDays = totalRows * 7 - firstDow - lastDay;
+    let gridFirst = first;
+    if (firstDow > 0) {
+      const d = new Date(year, month, 1 - firstDow);
+      gridFirst = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    }
+    let gridLast = last;
+    if (trailingDays > 0) {
+      const ny = month === 11 ? year + 1 : year;
+      const nm = month === 11 ? 1 : month + 2;
+      gridLast = `${ny}-${pad(nm)}-${pad(trailingDays)}`;
+    }
     await loadCustomHolidays();
 
     if (currentView === 'sales') {
@@ -2335,10 +2351,10 @@
 
     const [leaveRes, evRes] = await Promise.all([
       sb.from('leave_records').select('*')
-        .lte('start_date', last).gte('end_date', first).gte('start_date', '2026-01-01')
+        .lte('start_date', gridLast).gte('end_date', gridFirst).gte('start_date', '2026-01-01')
         .eq('owner_user_id', currentUser.user_id),
       sb.from('manual_events').select('*')
-        .lte('start_date', last).gte('end_date', first).order('created_at', { ascending: true })
+        .lte('start_date', gridLast).gte('end_date', gridFirst).order('created_at', { ascending: true })
     ]);
 
     const leaves = (leaveRes.data || []).map(r => ({ ...r, _source: 'leave', _chipClass: 'chip-vacation' }));
@@ -2901,8 +2917,10 @@
       const pb = b.r._source === 'leave' ? 4 : (_TL_PRIORITY[b.r.event_type] ?? 3);
       return pa - pb || a.start_min - b.start_min || b.end_min - a.end_min;
     });
+    // 컬럼 배치는 시작시간 순으로: 우선순위 정렬로 하면 순차 이벤트가 다른 컬럼에 배치되는 버그 발생
+    const timedByTime = [...timed].sort((a, b) => a.start_min - b.start_min || b.end_min - a.end_min);
     const cols = [];
-    timed.forEach(ev => {
+    timedByTime.forEach(ev => {
       let c = cols.findIndex(col => col[col.length - 1].end_min <= ev.start_min);
       if (c === -1) { c = cols.length; cols.push([]); }
       cols[c].push(ev);
@@ -2912,7 +2930,7 @@
     timed.forEach(ev => {
       let maxCol = 0;
       timed.forEach(o => {
-        if (o.start_min < ev.end_min && o.end_min > ev.start_min)
+        if (o !== ev && o.start_min < ev.end_min && o.end_min > ev.start_min)
           maxCol = Math.max(maxCol, o._col);
       });
       ev._numCols = maxCol + 1;
