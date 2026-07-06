@@ -4434,7 +4434,12 @@
       if (fid) folders.push({ folder_id: fid, name: fname || fid });
     });
 
-    const payload = { user_id: userId, name, password: '1234', is_admin: isAdmin, daou_folders: folders };
+    const units = await getOrgUnits();
+    const { team: derivedTeam, division: derivedDivision } = deriveOrgInfo(units, teamUnitId);
+    const payload = {
+      user_id: userId, name, password: '1234', is_admin: isAdmin, daou_folders: folders,
+      team: derivedTeam || '', division: derivedDivision || '',
+    };
     if (teamUnitId) payload.team_unit_id = Number(teamUnitId);
     if (position)   payload.position     = position;
 
