@@ -2417,7 +2417,7 @@
     const last = `${year}-${pad(month+1)}-${pad(lastDay)}`;
     const [{ data }, { data: detailData }] = await Promise.all([
       sb.from('sales_data').select('sale_date,amount,returns').gte('sale_date', first).lte('sale_date', last),
-      sb.from('sales_detail').select('sale_date,product,amount,returns').gte('sale_date', first).lte('sale_date', last),
+      sb.from('sales_detail').select('sale_date,product,amount,returns').gte('sale_date', first).lte('sale_date', last).limit(100000),
     ]);
     salesData = {}; returnsData = {};
     (data || []).forEach(r => { salesData[r.sale_date] = r.amount; returnsData[r.sale_date] = r.returns || 0; });
