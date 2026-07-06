@@ -29,13 +29,18 @@ supabase = create_client(
         httpx_client=httpx.Client(http2=False),
     ),
 )
+supabase_admin = create_client(
+    os.getenv('SUPABASE_URL'),
+    os.getenv('SUPABASE_SERVICE_KEY'),
+    options=ClientOptions(httpx_client=httpx.Client(http2=False)),
+)
 
 
 FIXED_USER_ID = '20230005'  # 김수민
 
 
 def get_credential():
-    pw_res = supabase.rpc('get_daou_password', {'p_user_id': FIXED_USER_ID}).execute()
+    pw_res = supabase_admin.rpc('get_daou_password', {'p_user_id': FIXED_USER_ID}).execute()
     pw = pw_res.data
     if not pw or pw == '1234':
         raise RuntimeError(f'{FIXED_USER_ID} 비밀번호를 찾을 수 없습니다.')
