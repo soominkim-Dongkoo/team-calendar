@@ -40,6 +40,7 @@ jobs:
           DAOU_URL: ${{ secrets.DAOU_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python scraper/scrape.py
 
       - name: Run calendar scraper (전사일정)

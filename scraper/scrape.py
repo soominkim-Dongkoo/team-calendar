@@ -20,6 +20,11 @@ supabase  = create_client(
         httpx_client=httpx.Client(http2=False),
     ),
 )
+supabase_admin = create_client(
+    os.getenv("SUPABASE_URL"),
+    os.getenv("SUPABASE_SERVICE_KEY"),
+    options=ClientOptions(httpx_client=httpx.Client(http2=False)),
+)
 
 
 # ── DB 헬퍼 ─────────────────────────────────────────────────────────────────
@@ -33,7 +38,7 @@ def load_scrape_targets():
         stored_pw = (u.get("password") or "").strip()
         if not folders or not stored_pw or stored_pw == "1234":
             continue
-        pw_res = supabase.rpc("get_daou_password", {"p_user_id": u["user_id"]}).execute()
+        pw_res = supabase_admin.rpc("get_daou_password", {"p_user_id": u["user_id"]}).execute()
         real_pw = pw_res.data
         if not real_pw or real_pw == "1234":
             continue
