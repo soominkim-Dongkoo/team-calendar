@@ -24,7 +24,7 @@ DAYS_AHEAD   = 45
 supabase = create_client(
     os.getenv('SUPABASE_URL'),
     os.getenv('SUPABASE_KEY'),
-    options=ClientOptions(httpx_client=httpx.Client(http2=False)),
+    options=ClientOptions(httpx_client=httpx.Client(http2=False, headers={"x-app-token": "dkbio-cal-2026"})),
 )
 
 

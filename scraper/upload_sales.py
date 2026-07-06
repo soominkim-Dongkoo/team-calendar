@@ -22,7 +22,12 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
-supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
+from supabase.client import ClientOptions
+supabase = create_client(
+    os.getenv("SUPABASE_URL"),
+    os.getenv("SUPABASE_KEY"),
+    options=ClientOptions(headers={"x-app-token": "dkbio-cal-2026"}),
+)
 
 
 def upload_sales(xlsx_path: str):

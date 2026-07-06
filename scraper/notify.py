@@ -11,7 +11,12 @@ from supabase import create_client
 sys.stdout.reconfigure(encoding='utf-8')
 load_dotenv()
 
-supabase = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_KEY'))
+from supabase.client import ClientOptions
+supabase = create_client(
+    os.getenv('SUPABASE_URL'),
+    os.getenv('SUPABASE_KEY'),
+    options=ClientOptions(headers={"x-app-token": "dkbio-cal-2026"}),
+)
 
 GMAIL_USER = os.getenv('GMAIL_USER')
 GMAIL_APP_PW = os.getenv('GMAIL_APP_PW')

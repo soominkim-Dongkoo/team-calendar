@@ -1822,7 +1822,9 @@
 
   const SUPABASE_URL = 'https://vfqqwnkfszlrrekfejry.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_4OImNxzBy7jz236aI0TDkg_ye_vLU9L';
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    global: { headers: { 'x-app-token': 'dkbio-cal-2026' } }
+  });
 
   // 로컬 개발: localhost:8765 / Vercel 배포: /api (same-origin)
   const RESERVE_BASE = (location.hostname === '' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')
