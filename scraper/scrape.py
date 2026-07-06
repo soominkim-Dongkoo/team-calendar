@@ -16,7 +16,8 @@ supabase  = create_client(
     os.getenv("SUPABASE_URL"),
     os.getenv("SUPABASE_KEY"),
     options=ClientOptions(
-        httpx_client=httpx.Client(http2=False, headers={"x-app-token": "dkbio-cal-2026"}),
+        headers={"x-app-token": "dkbio-cal-2026"},
+        httpx_client=httpx.Client(http2=False),
     ),
 )
 
