@@ -2415,14 +2415,24 @@
     const first = `${year}-${pad(month+1)}-01`;
     const lastDay = new Date(year, month + 1, 0).getDate();
     const last = `${year}-${pad(month+1)}-${pad(lastDay)}`;
-    const [{ data }, { data: detailData }] = await Promise.all([
-      sb.from('sales_data').select('sale_date,amount,returns').gte('sale_date', first).lte('sale_date', last),
-      sb.from('sales_detail').select('sale_date,product,amount,returns').gte('sale_date', first).lte('sale_date', last).limit(100000),
-    ]);
+    const { data } = await sb.from('sales_data').select('sale_date,amount,returns').gte('sale_date', first).lte('sale_date', last);
+    // sales_detail은 서버 max-rows 제한 우회를 위해 페이지네이션
+    const PAGE = 1000;
+    let detailData = [], from = 0;
+    while (true) {
+      const { data: page } = await sb.from('sales_detail')
+        .select('sale_date,product,amount,returns')
+        .gte('sale_date', first).lte('sale_date', last)
+        .range(from, from + PAGE - 1);
+      if (!page || page.length === 0) break;
+      detailData.push(...page);
+      if (page.length < PAGE) break;
+      from += PAGE;
+    }
     salesData = {}; returnsData = {};
     (data || []).forEach(r => { salesData[r.sale_date] = r.amount; returnsData[r.sale_date] = r.returns || 0; });
     salesDetailData = {};
-    (detailData || []).forEach(r => {
+    detailData.forEach(r => {
       if (!salesDetailData[r.sale_date]) salesDetailData[r.sale_date] = [];
       salesDetailData[r.sale_date].push({ product: r.product, amount: r.amount || 0, returns: r.returns || 0 });
     });
