@@ -22,9 +22,10 @@ SUPABASE_URL = 'https://vfqqwnkfszlrrekfejry.supabase.co'
 SUPABASE_KEY = 'sb_publishable_4OImNxzBy7jz236aI0TDkg_ye_vLU9L'
 VERCEL_BASE  = 'https://team-calendar-ten.vercel.app'
 
-GUBUN_COL  = 5
-DOCNO_COL  = 6
-AMOUNT_COL = 10
+PRODUCT_COL = 1
+GUBUN_COL   = 5
+DOCNO_COL   = 6
+AMOUNT_COL  = 10
 
 BG      = '#f1f5f9'
 SURFACE = '#ffffff'
@@ -59,12 +60,15 @@ def read_excel(filepath):
 def parse_rows(rows):
     daily_sales = {}
     daily_returns = {}
+    product_sales = {}
+    product_returns = {}
     for row in rows[1:]:
         if not row or len(row) <= AMOUNT_COL:
             continue
-        gubun  = row[GUBUN_COL]
-        doc_no = row[DOCNO_COL]
-        amount = row[AMOUNT_COL]
+        product = str(row[PRODUCT_COL] or '').strip() or '기타'
+        gubun   = row[GUBUN_COL]
+        doc_no  = row[DOCNO_COL]
+        amount  = row[AMOUNT_COL]
         if not doc_no or amount is None:
             continue
         ds = ''.join(c for c in str(doc_no) if c.isdigit())[:8]
@@ -72,38 +76,56 @@ def parse_rows(rows):
             continue
         date_str = f"{ds[:4]}-{ds[4:6]}-{ds[6:8]}"
         amt = abs(float(amount))
+        key = (date_str, product)
         if str(gubun).strip() == '반품':
             daily_returns[date_str] = daily_returns.get(date_str, 0) + amt
+            product_returns[key] = product_returns.get(key, 0) + amt
         else:
             daily_sales[date_str] = daily_sales.get(date_str, 0) + amt
+            product_sales[key] = product_sales.get(key, 0) + amt
     all_dates = set(list(daily_sales.keys()) + list(daily_returns.keys()))
-    return [
+    daily = [
         {'sale_date': d, 'amount': round(daily_sales.get(d, 0)), 'returns': round(daily_returns.get(d, 0))}
         for d in sorted(all_dates)
     ]
+    all_keys = set(list(product_sales.keys()) + list(product_returns.keys()))
+    detail = [
+        {'sale_date': k[0], 'product': k[1],
+         'amount': round(product_sales.get(k, 0)), 'returns': round(product_returns.get(k, 0))}
+        for k in all_keys
+    ]
+    return daily, detail
 
 
-def upload_to_supabase(records):
+def upload_to_supabase(records, detail):
     headers = {
         'apikey': SUPABASE_KEY,
         'Authorization': f'Bearer {SUPABASE_KEY}',
         'Content-Type': 'application/json',
+        'x-app-token': 'dkbio-cal-2026',
     }
     dates = [r['sale_date'] for r in records]
     min_date, max_date = min(dates), max(dates)
+    date_range = f"?sale_date=gte.{min_date}&sale_date=lte.{max_date}"
 
-    # 파일 날짜 범위 내 기존 데이터 삭제
-    del_url = (f"{SUPABASE_URL}/rest/v1/sales_data"
-               f"?sale_date=gte.{min_date}&sale_date=lte.{max_date}")
-    req = urllib.request.Request(del_url, headers=headers, method='DELETE')
-    urllib.request.urlopen(req, timeout=30)
+    def delete(table):
+        req = urllib.request.Request(
+            f"{SUPABASE_URL}/rest/v1/{table}{date_range}",
+            headers=headers, method='DELETE')
+        urllib.request.urlopen(req, timeout=30)
 
-    # 새 데이터 삽입
-    ins_url = f"{SUPABASE_URL}/rest/v1/sales_data"
-    body = json.dumps(records, ensure_ascii=False).encode('utf-8')
-    req = urllib.request.Request(ins_url, data=body, headers={**headers, 'Prefer': 'return=minimal'}, method='POST')
-    with urllib.request.urlopen(req, timeout=30) as res:
-        return res.status
+    def insert(table, rows):
+        body = json.dumps(rows, ensure_ascii=False).encode('utf-8')
+        req = urllib.request.Request(
+            f"{SUPABASE_URL}/rest/v1/{table}",
+            data=body, headers={**headers, 'Prefer': 'return=minimal'}, method='POST')
+        urllib.request.urlopen(req, timeout=30)
+
+    delete('sales_data')
+    insert('sales_data', records)
+    if detail:
+        delete('sales_detail')
+        insert('sales_detail', detail)
 
 
 class App(tk.Tk):
@@ -195,7 +217,7 @@ class App(tk.Tk):
             n = len(rows) if rows else 0
             self._set_status(f"데이터 파싱 중... (총 {n}행)", MUTED)
             self.update()
-            records = parse_rows(rows)
+            records, detail = parse_rows(rows)
             if not records:
                 self._done(False, "데이터를 찾을 수 없습니다. 파일 형식을 확인하세요.")
                 return
@@ -210,7 +232,7 @@ class App(tk.Tk):
             prev_net = None
             if today_recs:
                 try:
-                    _h = {'apikey': SUPABASE_KEY, 'Authorization': f'Bearer {SUPABASE_KEY}'}
+                    _h = {'apikey': SUPABASE_KEY, 'Authorization': f'Bearer {SUPABASE_KEY}', 'x-app-token': 'dkbio-cal-2026'}
                     _url = f"{SUPABASE_URL}/rest/v1/sales_data?sale_date=eq.{today_iso}&select=amount,returns"
                     with urllib.request.urlopen(urllib.request.Request(_url, headers=_h), timeout=10) as _r:
                         _existing = json.loads(_r.read().decode())
@@ -218,7 +240,7 @@ class App(tk.Tk):
                 except Exception:
                     pass
 
-            upload_to_supabase(records)
+            upload_to_supabase(records, detail)
 
             # 오늘 값이 실제 변경됐을 때만 알림 발송
             if today_recs:

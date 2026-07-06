@@ -1209,7 +1209,7 @@
       .detail-popup { width: 270px; max-width: calc(100vw - 24px); box-sizing: border-box; }
       sidebar { display:none !important; }
       .calendar-area { padding: 10px 12px 0; }
-      .btn-simulate-mobile { display:none !important; }
+      .btn-simulate-mobile { display:none; }
       #darkToggle { display:none !important; }
       .desktop-add-btn { display:none !important; }
       .desktop-upload-btn { display:none !important; }
@@ -1378,7 +1378,7 @@
     <button class="btn-view-mode" id="btn-view-mode" onclick="toggleMobileView()">☰</button>
     <button class="btn-notif" id="btn-notif" onclick="openNotifHistory()"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="btn-notif-badge" id="btn-notif-badge" style="display:none"></span></button>
     <button class="btn-dark btn-admin-settings" id="btn-admin-settings" onclick="openAdminSettings()" title="관리자 설정" style="display:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49.98c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98L4.95 5.07c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-.98c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49.98c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg></button>
-    <button class="btn-dark btn-simulate-mobile" id="btn-simulate-mobile" onclick="toggleSimulateMobile()" title="모바일 레이아웃 미리보기" style="display:none">📱</button>
+    <button class="btn-dark btn-simulate-mobile" id="btn-simulate-mobile" onclick="toggleSimulateMobile()" title="모바일 레이아웃 미리보기">📱</button>
     <button class="btn-dark" id="darkToggle" onclick="toggleDark()" title="다크모드 전환">🌙</button>
     <button class="btn-add desktop-add-btn" onclick="openModal()">+ 일정 추가</button>
     <button class="btn-add desktop-upload-btn" onclick="document.getElementById('sales-file-input').click()">↑ 엑셀 업로드</button>
@@ -1672,6 +1672,32 @@
         <span style="font-size:13px; font-weight:600; color:var(--text-primary);">매출</span>
         <span id="sales-popup-net" style="font-size:15px; font-weight:700; color:#48bb78;"></span>
       </div>
+      <div id="sales-popup-top5" style="border-top:1px solid var(--border); padding-top:10px; display:none;">
+        <div onclick="toggleTop5()" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
+          <span style="font-size:12px; font-weight:600; color:var(--text-muted);">당일 Top5 품목</span>
+          <span id="sales-popup-top5-arrow" style="font-size:11px; color:var(--text-muted);">▼</span>
+        </div>
+        <div id="sales-popup-top5-list" style="max-height:0; overflow:hidden; transition:max-height 0.35s ease-in-out;">
+          <div id="sales-popup-top5-grid" style="display:grid; grid-template-columns:1fr 58px 58px; gap:3px 8px; padding-top:8px;">
+            <span style="font-size:11px; color:var(--text-muted); padding-bottom:4px; border-bottom:1px solid var(--border);"></span>
+            <span style="font-size:11px; color:var(--text-muted); text-align:right; padding-bottom:4px; border-bottom:1px solid var(--border);">당일</span>
+            <span id="sales-popup-top5-cumul-hdr" style="font-size:11px; color:var(--text-muted); text-align:right; padding-bottom:4px; border-bottom:1px solid var(--border);">누적</span>
+          </div>
+        </div>
+      </div>
+      <div id="sales-popup-cumul5" style="border-top:1px solid var(--border); padding-top:10px; display:none;">
+        <div onclick="toggleCumul5()" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
+          <span style="font-size:12px; font-weight:600; color:var(--text-muted);">누적 Top5 품목</span>
+          <span id="sales-popup-cumul5-arrow" style="font-size:11px; color:var(--text-muted);">▼</span>
+        </div>
+        <div id="sales-popup-cumul5-list" style="max-height:0; overflow:hidden; transition:max-height 0.35s ease-in-out;">
+          <div id="sales-popup-cumul5-grid" style="display:grid; grid-template-columns:1fr 58px 58px; gap:3px 8px; padding-top:8px;">
+            <span style="font-size:11px; color:var(--text-muted); padding-bottom:4px; border-bottom:1px solid var(--border);"></span>
+            <span style="font-size:11px; color:var(--text-muted); text-align:right; padding-bottom:4px; border-bottom:1px solid var(--border);">당일</span>
+            <span style="font-size:11px; color:var(--text-muted); text-align:right; padding-bottom:4px; border-bottom:1px solid var(--border);">누적</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1906,6 +1932,7 @@
   let currentView = 'schedule';
   let salesData = {};
   let returnsData = {};
+  let salesDetailData = {}; // { dateStr: [{product, amount, returns}] }
   let salesDisplayState = { daily: true, cumulative: true };
 
   function toggleSalesDisplay(type, checked) {
@@ -1923,12 +1950,100 @@
     document.getElementById('sales-popup-sales').textContent   = fmt(sales);
     document.getElementById('sales-popup-returns').textContent = fmt(ret);
     document.getElementById('sales-popup-net').textContent     = fmt(net);
+
+    const top5Wrap = document.getElementById('sales-popup-top5');
+    const details = salesDetailData[dateStr];
+    if (details && details.length) {
+      // 당일 Top5
+      const sorted = [...details]
+        .map(r => ({ product: r.product, net: (r.amount || 0) - (r.returns || 0) }))
+        .sort((a, b) => b.net - a.net)
+        .slice(0, 5);
+      // 월 누적 (1일 ~ dateStr)
+      const monthPrefix = dateStr.slice(0, 7);
+      const hasPrior = Object.keys(salesDetailData).some(d => d.slice(0, 7) === monthPrefix && d < dateStr);
+      const cumulative = {};
+      Object.entries(salesDetailData).forEach(([d, rows]) => {
+        if (d.slice(0, 7) === monthPrefix && d <= dateStr)
+          rows.forEach(r => { cumulative[r.product] = (cumulative[r.product] || 0) + (r.amount || 0) - (r.returns || 0); });
+      });
+      // 헤더/행 누적 컬럼 표시 여부
+      const grid = document.getElementById('sales-popup-top5-grid');
+      document.getElementById('sales-popup-top5-cumul-hdr').style.visibility = hasPrior ? '' : 'hidden';
+      while (grid.children.length > 3) grid.removeChild(grid.lastChild);
+      sorted.forEach((r, i) => {
+        const name = document.createElement('span');
+        name.style.cssText = 'font-size:11px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; max-width:120px;';
+        name.textContent = `${i+1}. ${r.product}`;
+        const day = document.createElement('span');
+        day.style.cssText = 'font-size:11px; font-weight:600; color:var(--text-primary); text-align:right;';
+        day.textContent = fmt(r.net);
+        const cum = document.createElement('span');
+        cum.style.cssText = `font-size:11px; font-weight:600; color:#4361ee; text-align:right; visibility:${hasPrior ? 'visible' : 'hidden'};`;
+        cum.textContent = fmt(cumulative[r.product] || 0);
+        grid.append(name, day, cum);
+      });
+      // 누적 Top5
+      const cumul5Wrap = document.getElementById('sales-popup-cumul5');
+      if (hasPrior) {
+        const cumul5Grid = document.getElementById('sales-popup-cumul5-grid');
+        while (cumul5Grid.children.length > 3) cumul5Grid.removeChild(cumul5Grid.lastChild);
+        const dayMap = {};
+        (salesDetailData[dateStr] || []).forEach(r => { dayMap[r.product] = (r.amount || 0) - (r.returns || 0); });
+        const sortedCumul = Object.entries(cumulative)
+          .map(([product, net]) => ({ product, net }))
+          .sort((a, b) => b.net - a.net)
+          .slice(0, 5);
+        sortedCumul.forEach((r, i) => {
+          const name = document.createElement('span');
+          name.style.cssText = 'font-size:11px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; max-width:120px;';
+          name.textContent = `${i+1}. ${r.product}`;
+          const day = document.createElement('span');
+          day.style.cssText = 'font-size:11px; font-weight:600; color:var(--text-primary); text-align:right;';
+          day.textContent = fmt(dayMap[r.product] || 0);
+          const val = document.createElement('span');
+          val.style.cssText = 'font-size:11px; font-weight:600; color:#4361ee; text-align:right;';
+          val.textContent = fmt(r.net);
+          cumul5Grid.append(name, day, val);
+        });
+        document.getElementById('sales-popup-cumul5-list').style.maxHeight = '0';
+        document.getElementById('sales-popup-cumul5-arrow').textContent = '▼';
+        cumul5Wrap.style.display = '';
+      } else {
+        cumul5Wrap.style.display = 'none';
+      }
+
+      // 기본 접힘 상태 초기화
+      document.getElementById('sales-popup-top5-list').style.maxHeight = '0';
+      document.getElementById('sales-popup-top5-arrow').textContent = '▼';
+      top5Wrap.style.display = '';
+    } else {
+      top5Wrap.style.display = 'none';
+    }
+
     document.getElementById('sales-day-popup').style.display = '';
   }
 
   function closeSalesDayPopup() {
     document.getElementById('sales-day-popup').style.display = 'none';
   }
+
+  function toggleTop5() {
+    const list = document.getElementById('sales-popup-top5-list');
+    const arrow = document.getElementById('sales-popup-top5-arrow');
+    const collapsed = parseFloat(list.style.maxHeight || '0') === 0;
+    list.style.maxHeight = collapsed ? list.scrollHeight + 'px' : '0';
+    arrow.textContent = collapsed ? '▲' : '▼';
+  }
+
+  function toggleCumul5() {
+    const list = document.getElementById('sales-popup-cumul5-list');
+    const arrow = document.getElementById('sales-popup-cumul5-arrow');
+    const collapsed = parseFloat(list.style.maxHeight || '0') === 0;
+    list.style.maxHeight = collapsed ? list.scrollHeight + 'px' : '0';
+    arrow.textContent = collapsed ? '▲' : '▼';
+  }
+
 
   const today = new Date();
   let curYear  = today.getFullYear();
@@ -2228,15 +2343,22 @@
     const first = `${year}-${pad(month+1)}-01`;
     const lastDay = new Date(year, month + 1, 0).getDate();
     const last = `${year}-${pad(month+1)}-${pad(lastDay)}`;
-    const { data } = await sb.from('sales_data').select('sale_date,amount,returns')
-      .gte('sale_date', first).lte('sale_date', last);
+    const [{ data }, { data: detailData }] = await Promise.all([
+      sb.from('sales_data').select('sale_date,amount,returns').gte('sale_date', first).lte('sale_date', last),
+      sb.from('sales_detail').select('sale_date,product,amount,returns').gte('sale_date', first).lte('sale_date', last),
+    ]);
     salesData = {}; returnsData = {};
     (data || []).forEach(r => { salesData[r.sale_date] = r.amount; returnsData[r.sale_date] = r.returns || 0; });
+    salesDetailData = {};
+    (detailData || []).forEach(r => {
+      if (!salesDetailData[r.sale_date]) salesDetailData[r.sale_date] = [];
+      salesDetailData[r.sale_date].push({ product: r.product, amount: r.amount || 0, returns: r.returns || 0 });
+    });
   }
 
   // Sales_2026.xlsx 컬럼 매핑 (헤더행과 실제 데이터 불일치 → 인덱스 직접 지정)
-  // [5] 구분(판매/반품)  [6] 전표번호(YYYYMMDD-XXXX)  [10] 금액
-  const SALES_COL = { GUBUN: 5, DOCNO: 6, AMOUNT: 10 };
+  // [1] 제품명  [5] 구분(판매/반품)  [6] 전표번호(YYYYMMDD-XXXX)  [10] 금액
+  const SALES_COL = { PRODUCT: 1, GUBUN: 5, DOCNO: 6, AMOUNT: 10 };
 
   async function handleSalesUpload(input) {
     if (!currentUser?.is_admin) { alert('관리자 권한이 필요합니다.'); return; }
@@ -2262,8 +2384,10 @@
       console.log('[Upload] 전체 행 수:', rows.length, '/ 샘플 row[1]:', rows[1]);
       if (!rows || rows.length < 2) { alert('시트에 데이터가 없습니다.'); return; }
       const dailySales = {}, dailyReturns = {};
+      const productSales = {}, productReturns = {}; // { "date|product": amount }
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
+        const product = String(row[SALES_COL.PRODUCT] || '').trim() || '기타';
         const gubun  = row[SALES_COL.GUBUN];
         const docNo  = row[SALES_COL.DOCNO];
         const amount = row[SALES_COL.AMOUNT];
@@ -2272,8 +2396,14 @@
         if (ds.length !== 8) continue;
         const dateStr = `${ds.slice(0,4)}-${ds.slice(4,6)}-${ds.slice(6,8)}`;
         const amt = Math.abs(Number(amount));
-        if (String(gubun).trim() === '반품') dailyReturns[dateStr] = (dailyReturns[dateStr] || 0) + amt;
-        else dailySales[dateStr] = (dailySales[dateStr] || 0) + amt;
+        const key = `${dateStr}|${product}`;
+        if (String(gubun).trim() === '반품') {
+          dailyReturns[dateStr] = (dailyReturns[dateStr] || 0) + amt;
+          productReturns[key] = (productReturns[key] || 0) + amt;
+        } else {
+          dailySales[dateStr] = (dailySales[dateStr] || 0) + amt;
+          productSales[key] = (productSales[key] || 0) + amt;
+        }
       }
       const allDates = new Set([...Object.keys(dailySales), ...Object.keys(dailyReturns)]);
       console.log('[Upload] 파싱된 날짜 수:', allDates.size);
@@ -2303,6 +2433,18 @@
       if (delError) { alert('업로드 실패: ' + delError.message); return; }
       const { error } = await sb.from('sales_data').insert(toInsert);
       if (error) { alert('업로드 실패: ' + error.message); return; }
+
+      // sales_detail (품목별 집계) 저장
+      const allKeys = new Set([...Object.keys(productSales), ...Object.keys(productReturns)]);
+      const detailRows = [...allKeys].map(k => {
+        const [sale_date, product] = k.split('|');
+        return { sale_date, product, amount: Math.round(productSales[k] || 0), returns: Math.round(productReturns[k] || 0) };
+      });
+      if (detailRows.length) {
+        await sb.from('sales_detail').delete().gte('sale_date', minDate).lte('sale_date', maxDate);
+        await sb.from('sales_detail').insert(detailRows);
+      }
+
       alert(`${toInsert.length}일 매출 데이터 업로드 완료`);
 
       // 오늘 값이 실제로 변경됐을 때만 알림 발송
@@ -3977,6 +4119,11 @@
   function hideLoader() {
     const loader = document.getElementById('app-loader');
     if (loader) { loader.style.opacity = '0'; setTimeout(() => loader.remove(), 300); }
+  }
+
+  // 모바일 미리보기 버튼: 로컬 환경에서만 표시
+  if (['localhost', '127.0.0.1', ''].includes(location.hostname) || location.protocol === 'file:') {
+    document.getElementById('btn-simulate-mobile').style.display = '';
   }
 
   updateAvatar();
