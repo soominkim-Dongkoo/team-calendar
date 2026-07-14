@@ -529,6 +529,32 @@
     .sales-cumulative{ bottom: 7px;  font-size: 15px; color: var(--text-secondary); }
     .day-cell.other-month .sales-daily,
     .day-cell.other-month .sales-cumulative { color: var(--text-faint); }
+    .sales-forecast {
+      position: absolute;
+      top: 30px;
+      right: 4px;
+      background: transparent;
+      padding: 0;
+      pointer-events: none;
+      white-space: nowrap;
+      text-align: right;
+    }
+    .sales-forecast .fc-label {
+      display: inline-block;
+      background: #6b46c1;
+      color: #fff;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 9px;
+      margin-right: 3px;
+      vertical-align: middle;
+    }
+    .sales-forecast .fc-amount {
+      color: #6b46c1;
+      font-size: 16px;
+      font-weight: 700;
+      vertical-align: middle;
+    }
     .desktop-upload-btn { display: none; background: #1e7e45 !important; }
     .btn-admin-settings { font-size: 16px; }
 
@@ -1248,6 +1274,9 @@
       .day-cell { min-height:0; padding:3px; overflow:hidden; }
       .sales-daily { bottom: 24px; font-size: 13px; white-space: nowrap; }
       .sales-cumulative { font-size: 9px; white-space: nowrap; }
+      .sales-forecast { background: transparent; padding: 0; top: 22px; right: 2px; left: auto; text-align: right; }
+      .sales-forecast .fc-label { display: block; background: #6b46c1; color: #fff; border-radius: 3px; padding: 1px 4px; font-size: 7px; text-align: center; }
+      .sales-forecast .fc-amount { display: block; color: #6b46c1; font-size: 11px; font-weight: 700; padding: 0 4px; text-align: right; }
       .chips-wrap.clipped { max-height:68px; transition:max-height 0.4s ease-in-out; }
       .chip-more { font-size:9px; line-height:1.2; padding:0 2px; white-space:nowrap; touch-action:manipulation; }
       .event-chip { height:18px; font-size:10px; padding:0 4px; }
@@ -1320,6 +1349,9 @@
     body.simulate-mobile .day-cell { min-height:0; padding:3px; overflow:hidden; }
     body.simulate-mobile .sales-daily { bottom: 24px; font-size: 13px; white-space: nowrap; }
     body.simulate-mobile .sales-cumulative { font-size: 9px; white-space: nowrap; }
+    body.simulate-mobile .sales-forecast { background: transparent; padding: 0; top: 22px; right: 2px; left: auto; text-align: right; }
+    body.simulate-mobile .sales-forecast .fc-label { display: block; background: #6b46c1; color: #fff; border-radius: 3px; padding: 1px 4px; font-size: 7px; text-align: center; }
+    body.simulate-mobile .sales-forecast .fc-amount { display: block; color: #6b46c1; font-size: 11px; font-weight: 700; padding: 0 4px; text-align: right; }
     body.simulate-mobile .chips-wrap.clipped { max-height:68px; transition:max-height 0.4s ease-in-out; }
     body.simulate-mobile .chip-more { font-size:9px; line-height:1.2; padding:0 2px; white-space:nowrap; touch-action:manipulation; }
     body.simulate-mobile .event-chip { height:18px; font-size:10px; padding:0 4px; }
@@ -1975,6 +2007,12 @@
   let salesDetailData = {}; // { dateStr: [{product, amount, returns}] }
   let salesDisplayState = { daily: true, cumulative: true };
 
+  // 매출 예측 데이터 (forecast_* 테이블)
+  let fcHistory = {};      // `${year}-${month}` → {[wd_num]: amount}
+  let fcMonthMeta = {};    // `${year}-${month}` → {totalWd, earlyHolidays}
+  let fcLateStartMap = {}; // `${year}-${month}` → 21일 이후 첫 영업일 번호
+  let fcEstimate = null;   // {nAvail, estimated, lastDate} | null
+
   function toggleSalesDisplay(type, checked) {
     salesDisplayState[type] = checked;
     renderGrid(curYear, curMonth, []);
@@ -2248,6 +2286,9 @@
         .forEach(d => { running += salesData[d] - (returnsData[d] || 0); cumulativeMap[d] = running; });
     }
 
+    // 예측 표시할 날짜: computeForecast가 반환한 마지막 영업일
+    const fcForecastDate = (currentView === 'sales' && fcEstimate && currentUser?.can_view_forecast) ? (fcEstimate.lastDate || null) : null;
+
     for (let i = 0; i < totalRows * 7; i++) {
       const cell = document.createElement('div');
       cell.className = 'day-cell';
@@ -2310,6 +2351,12 @@
           cumEl.className = 'sales-cumulative';
           cumEl.textContent = (cumulativeMap[dateStr] / 100000000).toFixed(1) + '억';
           cell.appendChild(cumEl);
+        }
+        if (!isOther && fcForecastDate === dateStr) {
+          const fcEl = document.createElement('div');
+          fcEl.className = 'sales-forecast';
+          fcEl.innerHTML = `<span class="fc-label">예상 매출 </span><span class="fc-amount">${(fcEstimate.estimated / 1e8).toFixed(1)}억</span>`;
+          cell.appendChild(fcEl);
         }
         grid.appendChild(cell);
         continue;
@@ -2438,6 +2485,284 @@
     });
   }
 
+  // ── 매출 예측 알고리즘 (롤링 nowcast) ──────────────────────────────────────
+  const FC = {
+    START_N: 3, CORR_MIN_N: 5, WD_REF_N: 6, PROP_YEARS: 3,
+    APPLY_MONTHS: new Set([1, 2, 5, 6]),
+    EARLY_SQUISH: { 1: 0.88, 2: 0.86 },
+    SMOOTH_FROM_N: 4, MIN_COMPLETE_WD: 15,
+    DAMPING: 0.20, GATE_W: 0.25
+  };
+
+  function fcCum(wd, N) {
+    return Object.entries(wd).reduce((s, [w, a]) => +w <= N ? s + a : s, 0);
+  }
+  function fcTotal(wd) { return Object.values(wd).reduce((s, a) => s + a, 0); }
+
+  function fcPropAt(train, N) {
+    const vals = Object.values(train).filter(v => fcTotal(v) > 0).map(v => fcCum(v, N) / fcTotal(v));
+    return vals.length ? vals.reduce((s, x) => s + x, 0) / vals.length : NaN;
+  }
+
+  function fcMonthProp(allMonths, refYear, N, m) {
+    const vals = Object.entries(allMonths)
+      .filter(([k, v]) => {
+        const [y, mo] = k.split('-').map(Number);
+        return mo === m && y < refYear && Object.keys(v).length > 0 &&
+               Math.max(...Object.keys(v).map(Number)) >= FC.MIN_COMPLETE_WD;
+      })
+      .map(([, v]) => { const t = fcTotal(v); return t > 0 ? fcCum(v, N) / t : null; })
+      .filter(x => x !== null && isFinite(x));
+    return vals.length ? vals.reduce((s, x) => s + x, 0) / vals.length : null;
+  }
+
+  function fcBaseProp(allMonths, refYear, N, m, overallPN) {
+    if (FC.APPLY_MONTHS.has(m)) {
+      const mp = fcMonthProp(allMonths, refYear, N, m);
+      if (mp !== null) return mp;
+    }
+    return overallPN;
+  }
+
+  function fcRecentTrain(allMonths, refYear, exclude) {
+    const result = {};
+    Object.entries(allMonths).forEach(([k, v]) => {
+      const [y] = k.split('-').map(Number);
+      const maxWd = Object.keys(v).length > 0 ? Math.max(...Object.keys(v).map(Number)) : 0;
+      if (y >= refYear - FC.PROP_YEARS && y <= refYear - 1 &&
+          maxWd >= FC.MIN_COMPLETE_WD && k !== exclude) {
+        result[k] = v;
+      }
+    });
+    return result;
+  }
+
+  function fcLearnCorr(train, N, allMonths, refYear, overallPN, monthMeta) {
+    const recs = [];
+    Object.entries(train).forEach(([k, v]) => {
+      const [y, m] = k.split('-').map(Number);
+      const meta = monthMeta[k];
+      if (!meta || fcCum(v, N) <= 0) return;
+      const tw = meta.totalWd;
+      const ny = m === 12 ? y + 1 : y, nm = m === 12 ? 1 : m + 1;
+      const nextMeta = monthMeta[`${ny}-${nm}`];
+      if (nextMeta == null) return;
+      const nn = nextMeta.earlyHolidays;
+      const pN = fcBaseProp(allMonths, refYear, N, m, overallPN);
+      if (!pN || isNaN(pN)) return;
+      const base = fcCum(v, N) / pN;
+      const idealCorr = fcTotal(v) / base;
+      recs.push({ month: m, idealCorr, totalWd: tw, earlyHols: nn });
+    });
+
+    const ms = {}, mw = {}, mn = {};
+    for (let mm = 1; mm <= 12; mm++) {
+      const sub = recs.filter(r => r.month === mm);
+      const ics = sub.map(r => r.idealCorr);
+      let mean = 1.0, w = 0;
+      if (ics.length > 0) {
+        mean = ics.reduce((s, x) => s + x, 0) / ics.length;
+        if (ics.length >= 2) {
+          const variance = ics.reduce((s, x) => s + (x - mean) ** 2, 0) / (ics.length - 1);
+          const se = Math.sqrt(variance) / Math.sqrt(ics.length);
+          const sig = Math.abs(mean - 1);
+          const denom = sig ** 2 + se ** 2;
+          w = denom > 0 ? sig ** 2 / denom : 0;
+        }
+      }
+      ms[mm] = 1 + (w > FC.GATE_W ? FC.DAMPING : 0) * (mean - 1);
+      mw[mm] = sub.length ? sub.reduce((s, r) => s + r.totalWd, 0) / sub.length : 20.0;
+      mn[mm] = sub.length ? sub.reduce((s, r) => s + r.earlyHols, 0) / sub.length : 2.0;
+    }
+
+    function slope(field) {
+      const xd = [], yd = [];
+      for (let mm = 1; mm <= 12; mm++) {
+        const ts = recs.filter(r => r.month === mm);
+        if (ts.length < 2) continue;
+        const mx = ts.reduce((s, r) => s + r[field], 0) / ts.length;
+        const mc = ts.reduce((s, r) => s + r.idealCorr, 0) / ts.length;
+        ts.forEach(r => { xd.push(r[field] - mx); yd.push(r.idealCorr - mc); });
+      }
+      if (!xd.length) return 0;
+      const sumXX = xd.reduce((s, x) => s + x * x, 0);
+      const sumXY = xd.reduce((s, x, i) => s + x * yd[i], 0);
+      return sumXX > 0 ? sumXY / sumXX : 0;
+    }
+
+    return { ms, mw, mn, bwd: slope('totalWd'), bnx: slope('earlyHols') };
+  }
+
+  function fcCorrection(m, tw, nn, C) {
+    return C.ms[m] * (1 + C.bwd * (tw - C.mw[m])) * (1 + C.bnx * (nn - C.mn[m]));
+  }
+
+  function fcEarlySquish(m, N) {
+    return N < FC.CORR_MIN_N ? (FC.EARLY_SQUISH[m] || 1.0) : 1.0;
+  }
+
+  function fcRawEstimate(wdDict, allMonths, monthMeta, train, Cref, year, month, N) {
+    const overallPN = fcPropAt(train, N);
+    const pN = fcBaseProp(allMonths, year, N, month, overallPN);
+    if (!pN || isNaN(pN)) return NaN;
+    const base = fcCum(wdDict, N) / pN;
+    const meta = monthMeta[`${year}-${month}`];
+    const tw = meta?.totalWd;
+    const ny = month === 12 ? year + 1 : year, nm = month === 12 ? 1 : month + 1;
+    const nn = monthMeta[`${ny}-${nm}`]?.earlyHolidays;
+    if (tw == null || nn == null) return base * fcEarlySquish(month, N);
+    if (N >= FC.CORR_MIN_N) {
+      const C = fcLearnCorr(train, N, allMonths, year, overallPN, monthMeta);
+      return base * fcCorrection(month, tw, nn, C);
+    }
+    if (FC.APPLY_MONTHS.has(month)) return base * fcEarlySquish(month, N);
+    return base * fcCorrection(month, tw, nn, Cref);
+  }
+
+  // 4구간(~3일/~20일/~23일/~30일) 역사 비중 계산. month 지정 시 해당 월 전용.
+  function fcComputeZoneWeights(train, month) {
+    const FALLBACK = [0.263, 0.325, 0.265, 0.146];
+    const rows = [];
+    for (const [key, wdDict] of Object.entries(train)) {
+      const [, m] = key.split('-').map(Number);
+      if (month != null && m !== month) continue;
+      const meta = fcMonthMeta[key];
+      if (!meta) continue;
+      const tw = meta.totalWd;
+      const ls = fcLateStartMap[key];
+      if (!tw || !ls || ls <= 3) continue;
+      const t = fcTotal(wdDict);
+      if (t === 0) continue;
+      const z3end = Math.min(ls + 2, tw);
+      const w1 = fcCum(wdDict, 3) / t;
+      const w2 = (fcCum(wdDict, ls - 1) - fcCum(wdDict, 3)) / t;
+      const w3 = (fcCum(wdDict, z3end) - fcCum(wdDict, ls - 1)) / t;
+      const w4 = 1 - w1 - w2 - w3;
+      rows.push([w1, w2, w3, w4]);
+    }
+    if (rows.length < 2) return FALLBACK;
+    return [0, 1, 2, 3].map(i => rows.reduce((s, r) => s + r[i], 0) / rows.length);
+  }
+
+  // 구간인식 p(N): 각 구간 내 위치를 선형보간해서 누적비중 반환
+  function fcZoneAwareProp(N, ls, tw, weights) {
+    const [w1, w2, w3, w4] = weights;
+    const z3end = tw ? Math.min(ls + 2, tw) : ls + 2;
+    const z2size = Math.max(ls - 4, 1);
+    const z3size = Math.max(z3end - ls + 1, 1);
+    const z4size = tw ? Math.max(tw - z3end, 1) : 1;
+    if (N <= 3) return (N / 3) * w1;
+    if (N < ls) return w1 + ((N - 3) / z2size) * w2;
+    if (N <= z3end) return w1 + w2 + ((N - ls + 1) / z3size) * w3;
+    return w1 + w2 + w3 + ((N - z3end) / z4size) * w4;
+  }
+
+  // 누적평균을 zone 3 이후에도 유지. zone 3+의 개별 추정에만 zone_aware_prop 적용.
+  function fcSmoothed(wdDict, allMonths, monthMeta, train, Cref, year, month, N, lateWd, zoneWeights) {
+    const key = `${year}-${month}`;
+    const totalWd = fcMonthMeta[key] ? fcMonthMeta[key].totalWd : null;
+    if (totalWd && N >= totalWd) return fcCum(wdDict, N); // 마지막 영업일
+    if (N < FC.SMOOTH_FROM_N) return fcRawEstimate(wdDict, allMonths, monthMeta, train, Cref, year, month, N);
+    let sum = 0, cnt = 0;
+    for (let nn = FC.START_N; nn <= N; nn++) {
+      let estNn;
+      if (lateWd != null && nn >= lateWd) {
+        const pNN = fcZoneAwareProp(nn, lateWd, totalWd, zoneWeights);
+        estNn = pNN > 0 ? fcCum(wdDict, nn) / pNN : NaN;
+      } else {
+        estNn = fcRawEstimate(wdDict, allMonths, monthMeta, train, Cref, year, month, nn);
+      }
+      if (!isNaN(estNn)) { sum += estNn; cnt++; }
+    }
+    return cnt ? sum / cnt : NaN;
+  }
+
+  function computeForecast(year, jsMonth) {
+    const month = jsMonth + 1; // 1-indexed
+    const key = `${year}-${month}`;
+    const monthPrefix = `${year}-${pad(month)}`;
+    // 현재 달 영업일: salesData 중 평일(월~금)만 정렬 후 순번 부여
+    const bizDates = Object.keys(salesData)
+      .filter(d => d.startsWith(monthPrefix))
+      .filter(d => { const dow = new Date(d + 'T00:00:00').getDay(); return dow > 0 && dow < 6; })
+      .sort();
+    if (!bizDates.length) return null;
+    const wdDict = {};
+    bizDates.forEach((d, i) => { wdDict[i + 1] = (salesData[d] || 0) - (returnsData[d] || 0); });
+    const nAvail = bizDates.length;
+    // 현재 달만 표시 — 과거/미래 달은 항상 null
+    const _now = new Date();
+    if (year !== _now.getFullYear() || month !== _now.getMonth() + 1) return null;
+    if (nAvail < FC.START_N) return null;
+    const totalWd = fcMonthMeta[key] ? fcMonthMeta[key].totalWd : null;
+    if (totalWd && nAvail >= totalWd - 2) return null; // 마지막 3일은 표시 안 함
+    const train = fcRecentTrain(fcHistory, year, key);
+    if (Object.keys(train).length < 3) return null;
+    const refPN = fcPropAt(train, FC.WD_REF_N);
+    const Cref = fcLearnCorr(train, FC.WD_REF_N, fcHistory, year, refPN, fcMonthMeta);
+    const lateWd = (() => {
+      const idx = bizDates.findIndex(d => parseInt(d.slice(-2)) >= 21);
+      return idx >= 0 ? idx + 1 : null;
+    })();
+    const zoneWeights = fcComputeZoneWeights(train, FC.APPLY_MONTHS.has(month) ? month : null);
+    const est = fcSmoothed(wdDict, fcHistory, fcMonthMeta, train, Cref, year, month, nAvail, lateWd, zoneWeights);
+    if (isNaN(est) || est <= 0) return null;
+    // 표시 위치: 해당 달의 마지막 평일 (데이터 유무 무관)
+    let _ld = new Date(year, jsMonth + 1, 0);
+    while (_ld.getDay() === 0 || _ld.getDay() === 6) _ld.setDate(_ld.getDate() - 1);
+    const lastDate = `${year}-${pad(jsMonth + 1)}-${pad(_ld.getDate())}`;
+    return { nAvail, estimated: est, lastDate };
+  }
+
+  async function fcFetchAll(table, cols) {
+    const rows = [];
+    let start = 0;
+    while (true) {
+      const res = await sb.from(table).select(cols).range(start, start + 999);
+      rows.push(...(res.data || []));
+      if ((res.data || []).length < 1000) break;
+      start += 1000;
+    }
+    return rows;
+  }
+
+  async function loadForecastData(year, jsMonth) {
+    try {
+      // history/meta는 한 번만 로드 (세션 캐시)
+      if (Object.keys(fcHistory).length === 0) {
+        const [histRows, metaRows, dateWdRows] = await Promise.all([
+          fcFetchAll('forecast_sales_history', 'year,month,business_day_num,amount'),
+          fcFetchAll('forecast_month_meta', 'year,month,total_business_days,early_holidays'),
+          fcFetchAll('forecast_date_wd', 'sale_date,business_day_num')
+        ]);
+        fcHistory = {};
+        histRows.forEach(r => {
+          const k = `${r.year}-${r.month}`;
+          if (!fcHistory[k]) fcHistory[k] = {};
+          fcHistory[k][r.business_day_num] = r.amount;
+        });
+        fcMonthMeta = {};
+        metaRows.forEach(r => {
+          fcMonthMeta[`${r.year}-${r.month}`] = { totalWd: r.total_business_days, earlyHolidays: r.early_holidays };
+        });
+        // 각 월의 21일 이후 첫 영업일 번호 계산 (구간인식 p(N)에 사용)
+        fcLateStartMap = {};
+        dateWdRows.forEach(r => {
+          const [y, m, d] = r.sale_date.split('-').map(Number);
+          const k = `${y}-${m}`;
+          if (d >= 21 && (!fcLateStartMap[k] || r.business_day_num < fcLateStartMap[k])) {
+            fcLateStartMap[k] = r.business_day_num;
+          }
+        });
+      }
+      fcEstimate = computeForecast(year, jsMonth);
+    } catch (e) {
+      console.warn('[Forecast] 로드 실패:', e);
+      fcEstimate = null;
+    }
+  }
+  // ── 매출 예측 알고리즘 끝 ────────────────────────────────────────────────────
+
   // Sales_2026.xlsx 컬럼 매핑 (헤더행과 실제 데이터 불일치 → 인덱스 직접 지정)
   // [1] 제품명  [5] 구분(판매/반품)  [6] 전표번호(YYYYMMDD-XXXX)  [10] 금액
   const SALES_COL = { PRODUCT: 1, GUBUN: 5, DOCNO: 6, AMOUNT: 10 };
@@ -2535,6 +2860,7 @@
         if (prevTodayNet !== newTodayNet) fetch('/api/notify-sales', { method: 'POST' }).catch(() => {});
       }
       await loadSalesData(curYear, curMonth);
+      await loadForecastData(curYear, curMonth);
       renderGrid(curYear, curMonth, []);
     } catch (e) {
       console.error('[Upload] 오류:', e);
@@ -2565,6 +2891,7 @@
 
     if (currentView === 'sales') {
       await loadSalesData(year, month);
+      await loadForecastData(year, month);
       applyCurrentView();
       renderGrid(year, month, []);
       document.getElementById('month-grid').style.display = '';
@@ -2809,10 +3136,11 @@
   async function enrichCurrentUser() {
     if (!currentUser) return;
     const { data } = await sb.from('users')
-      .select('position, team_unit_id, team, division')
+      .select('position, team_unit_id, team, division, can_view_forecast')
       .eq('user_id', currentUser.user_id)
       .single();
     if (!data) return;
+    currentUser.can_view_forecast = data.can_view_forecast ?? false;
     currentUser.position = data.position;
     if (data.team_unit_id) {
       const units = await getOrgUnits();
@@ -4389,16 +4717,16 @@
   async function loadSettingsUsers() {
     const units = await getOrgUnits();
     let { data, error } = await sb.from('users')
-      .select('user_id,name,team_unit_id,position,is_admin,sales_notify,daou_folders')
+      .select('user_id,name,team_unit_id,position,is_admin,sales_notify,can_view_forecast,daou_folders')
       .order('user_id');
     if (error) {
       ({ data, error } = await sb.from('users')
-        .select('user_id,name,position,is_admin,sales_notify,daou_folders')
+        .select('user_id,name,position,is_admin,sales_notify,can_view_forecast,daou_folders')
         .order('user_id'));
     }
     if (error) {
       ({ data, error } = await sb.from('users')
-        .select('user_id,name,is_admin,sales_notify')
+        .select('user_id,name,is_admin,sales_notify,can_view_forecast')
         .order('user_id'));
     }
     // org_units 기반으로 본부/팀 파생
@@ -4428,6 +4756,7 @@
         <td>${foldersHtml}</td>
         <td style="text-align:center"><input type="checkbox" ${u.is_admin ? 'checked' : ''} onchange="updateUserField('${u.user_id}','is_admin',this.checked)"></td>
         <td style="text-align:center"><input type="checkbox" ${u.sales_notify ? 'checked' : ''} onchange="updateUserField('${u.user_id}','sales_notify',this.checked)"></td>
+        <td style="text-align:center"><input type="checkbox" ${u.can_view_forecast ? 'checked' : ''} onchange="updateUserField('${u.user_id}','can_view_forecast',this.checked)"></td>
         <td><button class="btn-sact" onclick="resetPassword('${u.user_id}')" title="1234로 초기화 → 다음 로그인 시 다우오피스 재인증">초기화</button></td>
         <td style="display:flex;gap:5px;padding:9px 6px">
           <button class="btn-sact" onclick="editUser('${u.user_id}')">수정</button>
@@ -4754,6 +5083,7 @@
             <th>기안폴더</th>
             <th>관리자</th>
             <th>매출알림</th>
+            <th>예상매출</th>
             <th>비밀번호</th>
             <th></th>
           </tr>
