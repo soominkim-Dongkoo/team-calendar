@@ -2324,8 +2324,12 @@
       numEl.textContent = num;
       numEl.addEventListener('click', e => {
         e.stopPropagation();
-        openDayView(dateStr);
-        if (isMobile() && _mobileGrid) toggleMobileView();
+        if (currentView === 'sales') {
+          openSalesDayPopup(dateStr);
+        } else {
+          openDayView(dateStr);
+          if (isMobile() && _mobileGrid) toggleMobileView();
+        }
       });
       cell.appendChild(numEl);
       const holidayName = HOLIDAYS[dateStr] || customHolidays[dateStr];
