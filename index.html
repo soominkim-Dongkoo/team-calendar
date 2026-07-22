@@ -5068,14 +5068,14 @@
       <div style="position:sticky;top:0;background:var(--surface);padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--border);z-index:1;">
         <p class="settings-section-title" style="margin-bottom:12px;">자체 공휴일 · 전사 휴가</p>
         <div class="settings-add-row" style="margin-top:0;">
-          <span style="display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:6px;padding:5px 10px;background:var(--surface);">
-            <input type="text" id="new-holiday-year" placeholder="YYYY" maxlength="4" style="width:44px;border:none;background:transparent;text-align:center;font-size:13px;outline:none;appearance:none;-moz-appearance:textfield;" oninput="this.value=this.value.replace(/\D/g,'');if(this.value.length>=4)document.getElementById('new-holiday-month').focus();">
+          <span style="display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:6px;padding:5px 10px;background:var(--surface);flex-shrink:0;">
+            <input type="text" id="new-holiday-year" placeholder="YYYY" maxlength="4" style="width:40px;border:none;background:transparent;text-align:center;font-size:13px;outline:none;" oninput="this.value=this.value.replace(/\D/g,'');if(this.value.length>=4)document.getElementById('new-holiday-month').focus();">
             <span style="color:var(--text-muted);user-select:none">-</span>
-            <input type="text" id="new-holiday-month" placeholder="MM" maxlength="2" style="width:28px;border:none;background:transparent;text-align:center;font-size:13px;outline:none;" oninput="this.value=this.value.replace(/\D/g,'');if(this.value.length>=2)document.getElementById('new-holiday-day').focus();">
+            <input type="text" id="new-holiday-month" placeholder="MM" maxlength="2" style="width:26px;border:none;background:transparent;text-align:center;font-size:13px;outline:none;" oninput="this.value=this.value.replace(/\D/g,'');if(this.value.length>=2)document.getElementById('new-holiday-day').focus();">
             <span style="color:var(--text-muted);user-select:none">-</span>
-            <input type="text" id="new-holiday-day" placeholder="DD" maxlength="2" style="width:28px;border:none;background:transparent;text-align:center;font-size:13px;outline:none;" oninput="this.value=this.value.replace(/\D/g,'');">
+            <input type="text" id="new-holiday-day" placeholder="DD" maxlength="2" style="width:26px;border:none;background:transparent;text-align:center;font-size:13px;outline:none;" oninput="this.value=this.value.replace(/\D/g,'');">
           </span>
-          <input type="text" id="new-holiday-name" placeholder="공휴일 이름 (예: 창립기념일)">
+          <input type="text" id="new-holiday-name" placeholder="공휴일 이름" style="width:120px;">
           <button class="btn-sadd" onclick="addHoliday()">추가</button>
         </div>
       </div>
