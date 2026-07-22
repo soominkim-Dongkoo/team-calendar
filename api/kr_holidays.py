@@ -1,7 +1,6 @@
 import json
 import urllib.parse
 from http.server import BaseHTTPRequestHandler
-import holidays as holidays_lib
 
 APP_TOKEN = 'dkbio-cal-2026'
 
@@ -22,6 +21,7 @@ class handler(BaseHTTPRequestHandler):
             return
 
         try:
+            import holidays as holidays_lib
             try:
                 kr = holidays_lib.country_holidays('KR', years=year)
             except Exception:
@@ -29,7 +29,7 @@ class handler(BaseHTTPRequestHandler):
             result = [{'date': str(d), 'name': n} for d, n in sorted(kr.items())]
             self._send(200, result)
         except Exception as e:
-            self._send(500, {'error': str(e)})
+            self._send(500, {'error': type(e).__name__ + ': ' + str(e)})
 
     def _send(self, code, data):
         body = json.dumps(data, ensure_ascii=False).encode()

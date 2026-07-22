@@ -4636,7 +4636,7 @@
       const res = await fetch(`/api/holidays?year=${year}`, {
         headers: { 'x-app-token': 'dkbio-cal-2026' }
       });
-      if (!res.ok) { resultEl.textContent = '오류: ' + res.status; return; }
+      if (!res.ok) { const txt = await res.text(); resultEl.textContent = '오류: ' + res.status + ' ' + txt; return; }
       const list = await res.json();
       const rows = list.map(h => ({ holiday_date: h.date, name: h.name }));
       const { error } = await sb.from('custom_holidays')
