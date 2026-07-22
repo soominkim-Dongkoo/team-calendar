@@ -21,9 +21,15 @@ class handler(BaseHTTPRequestHandler):
             self._send(400, {'error': '올바른 연도를 입력하세요'})
             return
 
-        kr = holidays_lib.KR(years=year)
-        result = [{'date': str(d), 'name': n} for d, n in sorted(kr.items())]
-        self._send(200, result)
+        try:
+            try:
+                kr = holidays_lib.country_holidays('KR', years=year)
+            except Exception:
+                kr = holidays_lib.KR(years=year)
+            result = [{'date': str(d), 'name': n} for d, n in sorted(kr.items())]
+            self._send(200, result)
+        except Exception as e:
+            self._send(500, {'error': str(e)})
 
     def _send(self, code, data):
         body = json.dumps(data, ensure_ascii=False).encode()
