@@ -4587,7 +4587,7 @@
 
   function switchSettingsTab(tab) {
     document.querySelectorAll('.stab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-    document.getElementById('settings-holidays').style.display = tab === 'holidays' ? '' : 'none';
+    document.getElementById('settings-holidays').style.display = tab === 'holidays' ? 'flex' : 'none';
     document.getElementById('settings-accounts').style.display = tab === 'accounts'  ? '' : 'none';
     document.getElementById('settings-org').style.display      = tab === 'org'       ? '' : 'none';
     if (tab === 'holidays') loadSettingsHolidays();
@@ -4626,6 +4626,27 @@
     await loadSettingsHolidays();
     await loadCustomHolidays();
     renderGrid(curYear, curMonth, _cachedData);
+  }
+
+  async function importHolidays() {
+    const year = document.getElementById('import-holiday-year').value;
+    const resultEl = document.getElementById('import-holiday-result');
+    resultEl.textContent = '불러오는 중...';
+    try {
+      const res = await fetch(`/api/holidays?year=${year}`, {
+        headers: { 'x-app-token': 'dkbio-cal-2026' }
+      });
+      if (!res.ok) { resultEl.textContent = '오류: ' + res.status; return; }
+      const list = await res.json();
+      const rows = list.map(h => ({ holiday_date: h.date, name: h.name }));
+      const { error } = await sb.from('custom_holidays')
+        .upsert(rows, { onConflict: 'holiday_date', ignoreDuplicates: true });
+      if (error) { resultEl.textContent = '저장 실패: ' + error.message; return; }
+      resultEl.textContent = `${list.length}개 불러옴 (기존 수동 입력 유지)`;
+      await loadSettingsHolidays();
+      await loadCustomHolidays();
+      renderGrid(curYear, curMonth, _cachedData);
+    } catch (e) { resultEl.textContent = '오류: ' + e.message; }
   }
 
   async function deleteHoliday(date) {
@@ -5064,25 +5085,39 @@
     </div>
 
     <!-- 공휴일 탭 -->
-    <div id="settings-holidays" class="settings-body">
-      <div style="position:sticky;top:0;background:var(--surface);padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--border);z-index:1;">
+    <div id="settings-holidays" class="settings-body" style="display:flex;flex-direction:column;overflow:hidden;padding:0;">
+      <!-- 고정 영역 -->
+      <div style="padding:24px 24px 0;flex-shrink:0;">
+        <div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+          <p class="settings-section-title" style="margin-bottom:12px;">공휴일 불러오기</p>
+          <div class="settings-add-row" style="margin-top:0;">
+            <input type="number" id="import-holiday-year" value="2027" min="2020" max="2099" style="max-width:90px;flex:none;">
+            <button class="btn-sadd" onclick="importHolidays()">불러오기</button>
+            <span id="import-holiday-result" style="font-size:12px;color:var(--text-muted);"></span>
+          </div>
+        </div>
         <p class="settings-section-title" style="margin-bottom:12px;">자체 공휴일 · 전사 휴가</p>
-        <div class="settings-add-row" style="margin-top:0;">
-          <span style="display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;background:var(--surface);flex-shrink:0;box-sizing:border-box;">
-            <input type="text" id="new-holiday-year" placeholder="YYYY" maxlength="4" style="width:52px;border:none;background:transparent;text-align:center;font-size:13px;outline:none;padding:0;font-family:inherit;" oninput="this.value=this.value.replace(/\D/g,'');if(this.value.length>=4)document.getElementById('new-holiday-month').focus();">
-            <span style="color:var(--text-muted);user-select:none;flex-shrink:0;">-</span>
-            <input type="text" id="new-holiday-month" placeholder="MM" maxlength="2" style="width:30px;border:none;background:transparent;text-align:center;font-size:13px;outline:none;padding:0;font-family:inherit;" oninput="this.value=this.value.replace(/\D/g,'');if(this.value.length>=2)document.getElementById('new-holiday-day').focus();">
-            <span style="color:var(--text-muted);user-select:none;flex-shrink:0;">-</span>
-            <input type="text" id="new-holiday-day" placeholder="DD" maxlength="2" style="width:30px;border:none;background:transparent;text-align:center;font-size:13px;outline:none;padding:0;font-family:inherit;" oninput="this.value=this.value.replace(/\D/g,'');">
-          </span>
-          <input type="text" id="new-holiday-name" placeholder="공휴일 이름 (예: 창립기념일)">
-          <button class="btn-sadd" onclick="addHoliday()">추가</button>
+        <div style="padding-bottom:12px;margin-bottom:0;border-bottom:1px solid var(--border);">
+          <div class="settings-add-row" style="margin-top:0;">
+            <span style="display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;background:var(--surface);flex-shrink:0;box-sizing:border-box;">
+              <input type="text" id="new-holiday-year" placeholder="YYYY" maxlength="4" style="width:52px;border:none;background:transparent;text-align:center;font-size:13px;outline:none;padding:0;font-family:inherit;" oninput="this.value=this.value.replace(/\D/g,'');if(this.value.length>=4)document.getElementById('new-holiday-month').focus();">
+              <span style="color:var(--text-muted);user-select:none;flex-shrink:0;">-</span>
+              <input type="text" id="new-holiday-month" placeholder="MM" maxlength="2" style="width:30px;border:none;background:transparent;text-align:center;font-size:13px;outline:none;padding:0;font-family:inherit;" oninput="this.value=this.value.replace(/\D/g,'');if(this.value.length>=2)document.getElementById('new-holiday-day').focus();">
+              <span style="color:var(--text-muted);user-select:none;flex-shrink:0;">-</span>
+              <input type="text" id="new-holiday-day" placeholder="DD" maxlength="2" style="width:30px;border:none;background:transparent;text-align:center;font-size:13px;outline:none;padding:0;font-family:inherit;" oninput="this.value=this.value.replace(/\D/g,'');">
+            </span>
+            <input type="text" id="new-holiday-name" placeholder="공휴일 이름 (예: 창립기념일)">
+            <button class="btn-sadd" onclick="addHoliday()">추가</button>
+          </div>
         </div>
       </div>
-      <table class="stbl">
-        <thead><tr><th>날짜</th><th>이름</th><th></th></tr></thead>
-        <tbody id="holiday-tbody"></tbody>
-      </table>
+      <!-- 스크롤 영역 -->
+      <div style="flex:1;overflow-y:auto;padding:0 24px 24px;">
+        <table class="stbl">
+          <thead><tr><th>날짜</th><th>이름</th><th></th></tr></thead>
+          <tbody id="holiday-tbody"></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- 계정 탭 -->
