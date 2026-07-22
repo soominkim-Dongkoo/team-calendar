@@ -4610,12 +4610,18 @@
   }
 
   async function addHoliday() {
-    const date = document.getElementById('new-holiday-date').value;
+    const y = parseInt(document.getElementById('new-holiday-year').value);
+    const mo = parseInt(document.getElementById('new-holiday-month').value);
+    const d = parseInt(document.getElementById('new-holiday-day').value);
     const name = document.getElementById('new-holiday-name').value.trim();
-    if (!date || !name) { alert('날짜와 이름을 모두 입력하세요.'); return; }
+    if (!y || !mo || !d || !name) { alert('날짜와 이름을 모두 입력하세요.'); return; }
+    if (y < 2020 || y > 2099) { alert('올바른 년도를 입력하세요 (2020~2099).'); return; }
+    const date = `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const { error } = await sb.from('custom_holidays').upsert({ holiday_date: date, name });
     if (error) { alert('추가 실패: ' + error.message); return; }
-    document.getElementById('new-holiday-date').value = '';
+    document.getElementById('new-holiday-year').value = '';
+    document.getElementById('new-holiday-month').value = '';
+    document.getElementById('new-holiday-day').value = '';
     document.getElementById('new-holiday-name').value = '';
     await loadSettingsHolidays();
     await loadCustomHolidays();
@@ -5062,7 +5068,13 @@
       <div style="position:sticky;top:0;background:var(--surface);padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--border);z-index:1;">
         <p class="settings-section-title" style="margin-bottom:12px;">자체 공휴일 · 전사 휴가</p>
         <div class="settings-add-row" style="margin-top:0;">
-          <input type="date" id="new-holiday-date">
+          <span style="display:inline-flex;align-items:center;gap:2px;border:1px solid var(--border);border-radius:6px;padding:4px 8px;background:var(--surface);">
+            <input type="number" id="new-holiday-year" placeholder="YYYY" min="2020" max="2099" style="width:52px;border:none;background:transparent;text-align:center;font-size:13px;outline:none;" oninput="if(this.value.length>=4){document.getElementById('new-holiday-month').focus();}">
+            <span style="color:var(--text-muted)">-</span>
+            <input type="number" id="new-holiday-month" placeholder="MM" min="1" max="12" style="width:32px;border:none;background:transparent;text-align:center;font-size:13px;outline:none;" oninput="if(this.value.length>=2){document.getElementById('new-holiday-day').focus();}">
+            <span style="color:var(--text-muted)">-</span>
+            <input type="number" id="new-holiday-day" placeholder="DD" min="1" max="31" style="width:32px;border:none;background:transparent;text-align:center;font-size:13px;outline:none;">
+          </span>
           <input type="text" id="new-holiday-name" placeholder="공휴일 이름 (예: 창립기념일)">
           <button class="btn-sadd" onclick="addHoliday()">추가</button>
         </div>
