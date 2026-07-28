@@ -2661,21 +2661,29 @@
     return w1 + w2 + w3 + ((N - z3end) / z4size) * w4;
   }
 
-  // 누적평균을 zone 3 이후에도 유지. zone 3+의 개별 추정에만 zone_aware_prop 적용.
+  // Zone 1~2: BD3~N 롤링평균. Zone 3+: zone 2 최종 smoothed값을 앵커로 두고 zone 3 롤링.
   function fcSmoothed(wdDict, allMonths, monthMeta, train, Cref, year, month, N, lateWd, zoneWeights) {
     const key = `${year}-${month}`;
     const totalWd = fcMonthMeta[key] ? fcMonthMeta[key].totalWd : null;
     if (totalWd && N >= totalWd) return fcCum(wdDict, N); // 마지막 영업일
     if (N < FC.SMOOTH_FROM_N) return fcRawEstimate(wdDict, allMonths, monthMeta, train, Cref, year, month, N);
+
+    // Zone 3+: zone 2 마지막 smoothed값 앵커 + zone 3 롤링 (이중억제 방지 + 연속성 확보)
+    if (lateWd != null && N >= lateWd) {
+      const anchor = fcSmoothed(wdDict, allMonths, monthMeta, train, Cref, year, month, lateWd - 1, lateWd, zoneWeights);
+      let sum = isNaN(anchor) ? 0 : anchor, cnt = isNaN(anchor) ? 0 : 1;
+      for (let nn = lateWd; nn <= N; nn++) {
+        const pNN = fcZoneAwareProp(nn, lateWd, totalWd, zoneWeights);
+        const estNn = pNN > 0 ? fcCum(wdDict, nn) / pNN : NaN;
+        if (!isNaN(estNn)) { sum += estNn; cnt++; }
+      }
+      return cnt ? sum / cnt : NaN;
+    }
+
+    // Zone 1~2: BD3~N 롤링평균
     let sum = 0, cnt = 0;
     for (let nn = FC.START_N; nn <= N; nn++) {
-      let estNn;
-      if (lateWd != null && nn >= lateWd) {
-        const pNN = fcZoneAwareProp(nn, lateWd, totalWd, zoneWeights);
-        estNn = pNN > 0 ? fcCum(wdDict, nn) / pNN : NaN;
-      } else {
-        estNn = fcRawEstimate(wdDict, allMonths, monthMeta, train, Cref, year, month, nn);
-      }
+      const estNn = fcRawEstimate(wdDict, allMonths, monthMeta, train, Cref, year, month, nn);
       if (!isNaN(estNn)) { sum += estNn; cnt++; }
     }
     return cnt ? sum / cnt : NaN;
