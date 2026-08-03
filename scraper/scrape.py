@@ -71,7 +71,7 @@ def upsert_record(doc_id, record):
 
 def save_cancel_record(doc_id, target_doc_id):
     try:
-        supabase.table("cancel_records").upsert({
+        supabase_admin.table("cancel_records").upsert({
             "doc_id": doc_id,
             "target_doc_id": target_doc_id,
         }).execute()
@@ -378,7 +378,7 @@ def scrape_cancel_folder(page, folder_id, processed_cancel_ids):
         target_doc_id = extract_target_doc_id(detail_text)
         if target_doc_id:
             try:
-                supabase.table("leave_records").delete().eq("doc_id", target_doc_id).execute()
+                supabase_admin.table("leave_records").delete().eq("doc_id", target_doc_id).execute()
                 print(f"    취소 처리: {doc_id} → 삭제 {target_doc_id}")
             except Exception as e:
                 print(f"    [오류] leave_records 삭제 실패 ({target_doc_id}): {type(e).__name__}: {e}")
