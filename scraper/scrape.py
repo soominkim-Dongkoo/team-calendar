@@ -70,10 +70,13 @@ def upsert_record(doc_id, record):
     }).execute()
 
 def save_cancel_record(doc_id, target_doc_id):
-    supabase.table("cancel_records").upsert({
-        "doc_id": doc_id,
-        "target_doc_id": target_doc_id,
-    }).execute()
+    try:
+        supabase.table("cancel_records").upsert({
+            "doc_id": doc_id,
+            "target_doc_id": target_doc_id,
+        }).execute()
+    except Exception as e:
+        print(f"    [오류] cancel_records 저장 실패 ({doc_id}): {type(e).__name__}: {e}")
 
 
 # ── 파싱 헬퍼 ───────────────────────────────────────────────────────────────
@@ -374,8 +377,11 @@ def scrape_cancel_folder(page, folder_id, processed_cancel_ids):
 
         target_doc_id = extract_target_doc_id(detail_text)
         if target_doc_id:
-            supabase.table("leave_records").delete().eq("doc_id", target_doc_id).execute()
-            print(f"    취소 처리: {doc_id} → 삭제 {target_doc_id}")
+            try:
+                supabase.table("leave_records").delete().eq("doc_id", target_doc_id).execute()
+                print(f"    취소 처리: {doc_id} → 삭제 {target_doc_id}")
+            except Exception as e:
+                print(f"    [오류] leave_records 삭제 실패 ({target_doc_id}): {type(e).__name__}: {e}")
         else:
             print(f"    취소 문서 {doc_id}: 문서번호 미발견")
 
