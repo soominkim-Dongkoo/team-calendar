@@ -162,13 +162,16 @@ def scrape_folder(page, folder_id, filter_name, existing_doc_ids, owner_user_id)
     page.wait_for_timeout(3000)
 
     try:
-        page.select_option("select[name='duration'], #duration", "all")
+        page.select_option("select[name='duration'], #duration", "all", timeout=5000)
     except Exception:
         pass
     try:
-        page.select_option("#searchtype", "formName")
+        page.select_option("#searchtype", "formName", timeout=5000)
     except Exception:
-        page.select_option("select[name='searchtype']", "formName")
+        try:
+            page.select_option("select[name='searchtype']", "formName", timeout=5000)
+        except Exception:
+            pass
     page.fill("#keyword, input[name='keyword']", "근태계신청_본사(ERP연동)")
     try:
         page.click("button:has-text('검색')")
@@ -193,13 +196,16 @@ def scrape_folder(page, folder_id, filter_name, existing_doc_ids, owner_user_id)
         page.wait_for_load_state("domcontentloaded")
         page.wait_for_timeout(2000)
         try:
-            page.select_option("select[name='duration'], #duration", "all")
+            page.select_option("select[name='duration'], #duration", "all", timeout=5000)
         except Exception:
             pass
         try:
-            page.select_option("#searchtype", "formName")
+            page.select_option("#searchtype", "formName", timeout=5000)
         except Exception:
-            page.select_option("select[name='searchtype']", "formName")
+            try:
+                page.select_option("select[name='searchtype']", "formName", timeout=5000)
+            except Exception:
+                pass
         page.fill("#keyword, input[name='keyword']", "근태계신청_본사(ERP연동)")
         try:
             page.click("button:has-text('검색')")
@@ -313,13 +319,16 @@ def scrape_cancel_folder(page, folder_id, processed_cancel_ids):
         page.wait_for_load_state("domcontentloaded")
         page.wait_for_timeout(2000)
         try:
-            page.select_option("select[name='duration'], #duration", "all")
+            page.select_option("select[name='duration'], #duration", "all", timeout=5000)
         except Exception:
             pass
         try:
-            page.select_option("#searchtype", "formName")
+            page.select_option("#searchtype", "formName", timeout=5000)
         except Exception:
-            page.select_option("select[name='searchtype']", "formName")
+            try:
+                page.select_option("select[name='searchtype']", "formName", timeout=5000)
+            except Exception:
+                pass
         page.fill("#keyword, input[name='keyword']", "ERP Data 변경 요청서")
         try:
             page.click("button:has-text('검색')")
