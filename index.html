@@ -2620,7 +2620,9 @@
       return base * fcCorrection(month, tw, nn, C);
     }
     if (FC.APPLY_MONTHS.has(month)) return base * fcEarlySquish(month, N);
-    return base * fcCorrection(month, tw, nn, Cref);
+    const tws = Object.keys(train).map(k => monthMeta[k]?.totalWd).filter(x => x != null);
+    const avgTw = tws.length ? tws.reduce((s, x) => s + x, 0) / tws.length : 20;
+    return base * (tw / avgTw);
   }
 
   // 4구간(~3일/~20일/~23일/~30일) 역사 비중 계산. month 지정 시 해당 월 전용.

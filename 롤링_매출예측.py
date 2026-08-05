@@ -411,7 +411,9 @@ def raw_estimate(v, months, month_wd, early, train, C_ref, year, month, N):
         return base * correction(month, tw, nn, C)
     if month in APPLY_MONTHS:
         return base * early_squish(month, N)
-    return base * correction(month, tw, nn, C_ref)          # 3~4일차 비월전용: 안정계수 보정
+    tws = [month_wd[k] for k in train if k in month_wd]
+    avg_tw = sum(tws) / len(tws) if tws else 20.0
+    return base * (tw / avg_tw)                             # 3~4일차 비월전용: 영업일수 비례 보정
 
 
 def smoothed_estimate(v, months, month_wd, early, late_start, train, C_ref, year, month, N,
