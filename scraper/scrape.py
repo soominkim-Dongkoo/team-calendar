@@ -172,7 +172,11 @@ def scrape_folder(page, folder_id, filter_name, existing_doc_ids, owner_user_id)
             page.select_option("select[name='searchtype']", "formName", timeout=5000)
         except Exception:
             pass
-    page.fill("#keyword, input[name='keyword']", "근태계신청_본사(ERP연동)")
+    try:
+        page.fill("#keyword, input[name='keyword']", "근태계신청_본사(ERP연동)", timeout=10000)
+    except Exception:
+        print(f"    [오류] keyword 입력창 미발견 — 폴더 {folder_id} 스킵")
+        return 0
     try:
         page.click("button:has-text('검색')")
     except Exception:
@@ -206,7 +210,11 @@ def scrape_folder(page, folder_id, filter_name, existing_doc_ids, owner_user_id)
                 page.select_option("select[name='searchtype']", "formName", timeout=5000)
             except Exception:
                 pass
-        page.fill("#keyword, input[name='keyword']", "근태계신청_본사(ERP연동)")
+        try:
+            page.fill("#keyword, input[name='keyword']", "근태계신청_본사(ERP연동)", timeout=10000)
+        except Exception:
+            print(f"    [오류] redo_search keyword 입력창 미발견 — 재검색 스킵")
+            return
         try:
             page.click("button:has-text('검색')")
         except Exception:
