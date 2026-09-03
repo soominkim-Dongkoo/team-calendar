@@ -3496,7 +3496,7 @@
     });
     // 각 이벤트가 속한 겹침 그룹 내 최대 컬럼 수 계산
     timed.forEach(ev => {
-      let maxCol = 0;
+      let maxCol = ev._col;   // 자기 컬럼 포함 — 빠지면 우측 컬럼이 numCols=1 로 계산돼 밖으로 밀림
       timed.forEach(o => {
         if (o !== ev && o.start_min < ev.end_min && o.end_min > ev.start_min)
           maxCol = Math.max(maxCol, o._col);
