@@ -337,15 +337,21 @@ def scrape_cancel_folder(page, folder_id, processed_cancel_ids):
                 page.select_option("select[name='searchtype']", "formName", timeout=5000)
             except Exception:
                 pass
-        page.fill("#keyword, input[name='keyword']", "ERP Data 변경 요청서")
+        try:
+            page.fill("#keyword, input[name='keyword']", "ERP Data 변경 요청서", timeout=10000)
+        except Exception:
+            print(f"    [오류] 취소검색 keyword 입력창 미발견 — 폴더 {folder_id} 스킵")
+            return False
         try:
             page.click("button:has-text('검색')")
         except Exception:
             page.press("#keyword, input[name='keyword']", "Enter")
         page.wait_for_load_state("domcontentloaded")
         page.wait_for_timeout(2000)
+        return True
 
-    redo_cancel_search()
+    if not redo_cancel_search():
+        return 0
 
     cancel_rows = page.query_selector_all("tr")
     cancel_targets = []
@@ -365,7 +371,8 @@ def scrape_cancel_folder(page, folder_id, processed_cancel_ids):
 
         cancel_links = get_cancel_links()
         if len(cancel_links) < len(cancel_targets):
-            redo_cancel_search()
+            if not redo_cancel_search():
+                break
             cancel_links = get_cancel_links()
         if i >= len(cancel_links):
             continue
