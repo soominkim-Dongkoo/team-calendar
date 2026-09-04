@@ -447,6 +447,12 @@ def scrape_user(user_id, password, folders, existing_doc_ids, processed_cancel_i
             browser.close()
             return 0, 0
         page.wait_for_timeout(2000)
+        # 비밀번호 주기 변경 요구 화면 — 모든 페이지가 여기로 리다이렉트되어 스크래핑 불가
+        if "passwordChange" in page.url:
+            print(f"  [{user_id}] 다우오피스 비밀번호 변경 요구 — 본인이 로그인해 변경하거나 "
+                  f"'30일 후에 변경하기' 필요. 이번 회차 스킵")
+            browser.close()
+            return 0, 0
         print(f"  [{user_id}] 로그인 성공")
 
         for folder in folders:
