@@ -4355,7 +4355,12 @@
       .forEach(id => { document.getElementById(id).disabled = !on; });
     if (on) {
       const dateEl = document.getElementById('ev-reminder-date');
-      if (!dateEl.value) dateEl.value = _todayStr();
+      if (!dateEl.value) {
+        // 기본값은 지정한 시작일 (지난 날짜면 오늘 — dateEl.min 이 오늘이라)
+        const today = _todayStr();
+        const start = document.getElementById('ev-start').value;
+        dateEl.value = (start && start >= today) ? start : today;
+      }
       _initEvReminderPicker();
     }
   }
