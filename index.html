@@ -4361,7 +4361,10 @@
         const start = document.getElementById('ev-start').value;
         dateEl.value = (start && start >= today) ? start : today;
       }
-      _initEvReminderPicker();
+      // 기본 시각은 일정 시작 30분 전 (오늘이면 현재시각 제한이 우선 적용됨)
+      const [sh, sm] = getTimeStr('start').split(':').map(Number);
+      const mins = sh * 60 + sm - 30;
+      _initEvReminderPicker(Math.floor(mins / 60), mins % 60);
     }
   }
 
