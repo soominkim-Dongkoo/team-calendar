@@ -64,6 +64,8 @@ def upsert_record(doc_id, record):
         "start_date": record["start"],
         "end_date":   record["end"],
         "duration":   record["duration"],
+        "start_time": record["start_time"],
+        "end_time":   record["end_time"],
         "status":     record["status"],
         "doc_url":    record["doc_url"],
         "owner_user_id": record["owner_user_id"],
@@ -110,11 +112,14 @@ def parse_period(period_raw):
     h = re.search(r"(\d{2})시\s*\d{2}분", period_raw)
     if h:
         start_hour = int(h.group(1))
+    times = re.findall(r"(\d{2})시\s*(\d{2})분", period_raw)   # [('10','00'), ('17','30')]
     return {
         "start": dates[0] if len(dates) > 0 else "",
         "end":   dates[1] if len(dates) > 1 else (dates[0] if dates else ""),
         "duration": duration,
         "start_hour": start_hour,
+        "start_time": f"{times[0][0]}:{times[0][1]}" if len(times) > 0 else None,
+        "end_time":   f"{times[1][0]}:{times[1][1]}" if len(times) > 1 else None,
     }
 
 LABEL_MAP = {
@@ -126,6 +131,9 @@ LABEL_MAP = {
 
 def get_label(leave_type):
     return LABEL_MAP.get(leave_type, leave_type)
+
+# 시간이 자유로운 근태 — 연차식 종일/반차 칸 대신 기안의 실제 시간을 저장
+TIMED_TYPES = {"외근", "출장"}
 
 def get_day_type(leave_type, duration, start_hour):
     if "반반차" in leave_type:
@@ -282,6 +290,8 @@ def scrape_folder(page, folder_id, filter_name, existing_doc_ids, owner_user_id)
         period = parse_period(detail.get("period_raw", ""))
         leave_type = detail.get("leave_type", "")
         day_type = get_day_type(leave_type, period["duration"], period["start_hour"])
+        # 하루짜리만: 여러 날이면 첫날 시작~마지막날 종료라 날짜별 시간으로 쪼갤 수 없음
+        timed = leave_type in TIMED_TYPES and period["start"] == period["end"]
         record = {
             "name":       detail.get("name", ""),
             "leave_type": leave_type,
@@ -290,6 +300,8 @@ def scrape_folder(page, folder_id, filter_name, existing_doc_ids, owner_user_id)
             "start":      period["start"],
             "end":        period["end"],
             "duration":   period["duration"],
+            "start_time": period["start_time"] if timed else None,
+            "end_time":   period["end_time"]   if timed else None,
             "status":     "승인",
             "doc_url":    doc_url,
             "owner_user_id": owner_user_id,

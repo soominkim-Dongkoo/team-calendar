@@ -3396,6 +3396,12 @@
     '반반차(4Q)': ['15:30', '17:30'],
   };
 
+  // 외근·출장(하루짜리)은 기안의 실제 시간이 저장돼 있음 → 고정 시간표보다 우선
+  function leaveRange(r) {
+    if (r.start_time && r.end_time) return [r.start_time.slice(0, 5), r.end_time.slice(0, 5)];
+    return DAY_TYPE_RANGE[r.day_type] || null;
+  }
+
   let _selectedDayStr = null;
   const TL_SLOT_H = 56; // px per hour
   const TL_START  = 8;  // 8시부터 시작
@@ -3437,8 +3443,9 @@
     const allDay = [], timed = [];
     for (const r of all) {
       const isLeave = r._source === 'leave';
-      if (isLeave && DAY_TYPE_RANGE[r.day_type]) {
-        const [s, e] = DAY_TYPE_RANGE[r.day_type];
+      const lr = isLeave ? leaveRange(r) : null;
+      if (lr) {
+        const [s, e] = lr;
         const [sh, sm] = s.split(':').map(Number);
         const [eh, em] = e.split(':').map(Number);
         timed.push({ r, start_min: sh*60+sm, end_min: eh*60+em });
@@ -3576,7 +3583,8 @@
       if (height > 42) {
         let timeStr = null;
         if (ev.r._source === 'leave') {
-          timeStr = DAY_TYPE_TIME[ev.r.day_type] || null;
+          const lr = leaveRange(ev.r);
+          timeStr = lr ? lr.join(' ~ ') : null;
         } else if (ev.r.start_time && ev.r.end_time) {
           timeStr = `${ev.r.start_time.slice(0, 5)} ~ ${ev.r.end_time.slice(0, 5)}`;
         } else if (ev.r.start_time) {
@@ -3647,16 +3655,6 @@
     }
   }
 
-  const DAY_TYPE_TIME = {
-    '종일':       '08:30 ~ 17:30',
-    '반차(오전)': '08:30 ~ 12:30',
-    '반차(오후)': '13:30 ~ 17:30',
-    '반반차(1Q)': '08:30 ~ 10:30',
-    '반반차(2Q)': '10:30 ~ 12:30',
-    '반반차(3Q)': '13:30 ~ 15:30',
-    '반반차(4Q)': '15:30 ~ 17:30',
-  };
-
   let _detailRecord = null;
   let _detailAnchor = null;
   let _detailAnchorRect = null;
@@ -3708,7 +3706,7 @@
     const isMeeting = r._source === 'event' && ['company', 'meeting'].includes(r.event_type);
     document.getElementById('detail-time').textContent = r._source === 'event'
       ? (r.start_time ? `${r.start_time.slice(0,5)} ~ ${(r.end_time || '').slice(0,5)}` : '-')
-      : (DAY_TYPE_TIME[r.day_type] || r.day_type);
+      : (leaveRange(r)?.join(' ~ ') || r.day_type);
 
     document.getElementById('detail-room-row').style.display = isMeeting ? '' : 'none';
     document.getElementById('detail-room').textContent = r.meeting_room || '-';
@@ -4139,7 +4137,7 @@
         const label = r._source === 'leave'
           ? `${r.name} ${r.label}${r.day_type !== '종일' ? ' ' + r.day_type : ''}`
           : r.title;
-        const time = (r._source === 'event' && r.start_time)
+        const time = r.start_time   // 일정, 또는 실제 시간이 저장된 외근·출장
           ? `${r.start_time.slice(0,5)}${r.end_time ? '~' + r.end_time.slice(0,5) : ''}`
           : (r._source === 'leave' && r.day_type !== '종일' ? r.day_type : '');
         return `<div class="agenda-item" data-date="${d}" data-idx="${idx}" onclick="_agendaClick(this)">
