@@ -36,7 +36,8 @@ WD_REF_N = 6                 # 3~4일차 영업일수 보정에 쓸 '안정 β_w
 PROP_YEARS = 3               # p(N)·보정 학습 기간: 최근 N년(비중이 최근 상승 추세라 최근값 추종)
 APPLY_MONTHS = {1, 2, 5, 6}  # 월전용 비중 적용 달(초반 몰림 달). 이 달들은 p(N)을 해당월 전체이력으로.
 EARLY_SQUISH = {1: 0.88, 2: 0.86}  # 3~4일차 초반 과대추정 억제 하향계수(월별). 5일차(CORR_MIN_N)부터 1.0 복귀.
-SMOOTH_FROM_N = 4            # 이 영업일차부터 START_N~N 전체 raw 추정값 누적평균 (스파이크 자연 희석)
+SMOOTH_FROM_N = 4            # 이 영업일차부터 raw 추정값을 평균 (스파이크 자연 희석)
+SMOOTH_WINDOW = 3            # 평균에 쓸 최근 raw 개수 (이동평균). 늘리면 둔해지고 줄이면 출렁임
 MIN_COMPLETE_WD = 15         # 완결월 판정
 MAXN = 20                    # 누적비중/보정 학습 최대 영업일
 DAMPING = 0.20               # 월구조 보정 강도 (0=고정만, 1=풀보정). 0.2로 완만화(초기 과보정 억제).
@@ -418,7 +419,7 @@ def raw_estimate(v, months, month_wd, early, train, C_ref, year, month, N):
 
 def smoothed_estimate(v, months, month_wd, early, late_start, train, C_ref, year, month, N,
                       zone_weights=None):
-    """Zone 1~2: BD3~N 롤링평균으로 노이즈 억제.
+    """Zone 1~2: 최근 SMOOTH_WINDOW 개 raw 이동평균으로 노이즈 억제.
     Zone 3+ (N>=ls): zone_aware_prop raw값만 사용 — 이미 스파이크 감안한 비중이므로 추가 희석 불필요."""
     import numpy as np
     ls = late_start.get((year, month))
@@ -448,9 +449,11 @@ def smoothed_estimate(v, months, month_wd, early, late_start, train, C_ref, year
                 estimates.append(est_nn)
         return float(np.mean(estimates)) if estimates else float('nan')
 
-    # Zone 1~2: BD3~N 롤링평균
+    # Zone 1~2: 최근 SMOOTH_WINDOW 개 raw 이동평균
+    # 3일차부터 전부 누적평균하면 창이 계속 늘어나 오늘 값의 비중이 1/N 로 줄고,
+    # 월 중반에 추세가 바뀌어도 월초의 낮은(높은) 추정을 끝까지 붙들게 된다.
     estimates = []
-    for nn in range(START_N, N + 1):
+    for nn in range(max(START_N, N - SMOOTH_WINDOW + 1), N + 1):
         est_nn = raw_estimate(v, months, month_wd, early, train, C_ref, year, month, nn)
         if not (est_nn != est_nn):  # NaN 제외
             estimates.append(est_nn)

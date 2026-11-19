@@ -2494,7 +2494,7 @@
     START_N: 3, CORR_MIN_N: 5, WD_REF_N: 6, PROP_YEARS: 3,
     APPLY_MONTHS: new Set([1, 2, 5, 6]),
     EARLY_SQUISH: { 1: 0.88, 2: 0.86 },
-    SMOOTH_FROM_N: 4, MIN_COMPLETE_WD: 15,
+    SMOOTH_FROM_N: 4, SMOOTH_WINDOW: 3, MIN_COMPLETE_WD: 15,
     DAMPING: 0.20, GATE_W: 0.25
   };
 
@@ -2663,7 +2663,7 @@
     return w1 + w2 + w3 + ((N - z3end) / z4size) * w4;
   }
 
-  // Zone 1~2: BD3~N 롤링평균. Zone 3+: zone 2 최종 smoothed값을 앵커로 두고 zone 3 롤링.
+  // Zone 1~2: 최근 3개 raw 이동평균. Zone 3+: zone 2 최종 smoothed값을 앵커로 두고 zone 3 롤링.
   function fcSmoothed(wdDict, allMonths, monthMeta, train, Cref, year, month, N, lateWd, zoneWeights) {
     const key = `${year}-${month}`;
     const totalWd = fcMonthMeta[key] ? fcMonthMeta[key].totalWd : null;
@@ -2682,9 +2682,11 @@
       return cnt ? sum / cnt : NaN;
     }
 
-    // Zone 1~2: BD3~N 롤링평균
+    // Zone 1~2: 최근 SMOOTH_WINDOW 개 raw 이동평균
+    // 3일차부터 전부 누적평균하면 창이 계속 늘어나 오늘 값의 비중이 1/N 로 줄고,
+    // 월 중반에 추세가 바뀌어도 월초의 낮은(높은) 추정을 끝까지 붙들게 된다.
     let sum = 0, cnt = 0;
-    for (let nn = FC.START_N; nn <= N; nn++) {
+    for (let nn = Math.max(FC.START_N, N - FC.SMOOTH_WINDOW + 1); nn <= N; nn++) {
       const estNn = fcRawEstimate(wdDict, allMonths, monthMeta, train, Cref, year, month, nn);
       if (!isNaN(estNn)) { sum += estNn; cnt++; }
     }
